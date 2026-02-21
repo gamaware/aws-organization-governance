@@ -13,6 +13,13 @@ on:
       - 'terraform/**'
       - '.github/workflows/terraform-cicd.yml'
       - '.github/actions/terraform-composite/**'
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Approve and run terraform apply'
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   id-token: write
@@ -43,10 +50,7 @@ jobs:
     name: Terraform Apply
     runs-on: ubuntu-latest
     needs: terraform-plan
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    environment:
-      name: development
-      url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    if: github.event_name == 'workflow_dispatch' && inputs.apply == true
     env:
       TF_VAR_organization_id: ${{ vars.TF_VAR_organization_id }}
       TF_VAR_dev_ou_id: ${{ vars.TF_VAR_dev_ou_id }}
