@@ -1,3 +1,13 @@
+# Enable Service Control Policies in the organization
+resource "aws_organizations_organization" "org" {
+  feature_set = "ALL"
+
+  enabled_policy_types = [
+    "SERVICE_CONTROL_POLICY"
+  ]
+}
+
+# Dev OU Service Control Policy
 resource "aws_organizations_policy" "dev_scp" {
   name        = "DevEnvironmentRestrictions"
   description = "Cost controls and security guardrails for Dev OU"
