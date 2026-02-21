@@ -1,0 +1,28 @@
+name: Terraform Plan
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform-plan.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Terraform Plan
+        uses: ./.github/actions/terraform-composite
+        with:
+          terraform_command: plan
+          working_directory: terraform/scps
+          aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
+          aws_region: us-east-1
