@@ -7,9 +7,9 @@ resource "aws_organizations_policy" "dev_scp" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "DenyAllOutsideUSEast1"
-        Effect = "Deny"
-        Action = "*"
+        Sid      = "DenyAllOutsideUSEast1"
+        Effect   = "Deny"
+        Action   = "*"
         Resource = "*"
         Condition = {
           StringNotEquals = {
@@ -55,15 +55,15 @@ resource "aws_organizations_policy" "dev_scp" {
         }
       },
       {
-        Sid    = "DenyLeavingOrganization"
-        Effect = "Deny"
-        Action = "organizations:LeaveOrganization"
+        Sid      = "DenyLeavingOrganization"
+        Effect   = "Deny"
+        Action   = "organizations:LeaveOrganization"
         Resource = "*"
       },
       {
-        Sid    = "DenyRootUserActions"
-        Effect = "Deny"
-        Action = "*"
+        Sid      = "DenyRootUserActions"
+        Effect   = "Deny"
+        Action   = "*"
         Resource = "*"
         Condition = {
           StringLike = {

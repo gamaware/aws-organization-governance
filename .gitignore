@@ -25,6 +25,11 @@ override.tf.json
 # Environment
 .env
 .env.local
+.venv/
+venv/
+
+# Pre-commit
+.secrets.baseline
 
 # Kiro
 .kiro/
