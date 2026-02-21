@@ -55,10 +55,10 @@ runs:
       if: inputs.terraform_command == 'plan'
       shell: bash
       working-directory: ${{ inputs.working_directory }}
-      run: terraform plan -no-color -out=tfplan
+      run: terraform plan -var-file=terraform.tfvars -no-color -out=tfplan
 
     - name: Terraform Apply
       if: inputs.terraform_command == 'apply'
       shell: bash
       working-directory: ${{ inputs.working_directory }}
-      run: terraform apply -auto-approve
+      run: terraform apply -auto-approve tfplan
