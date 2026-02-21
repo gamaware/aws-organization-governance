@@ -72,6 +72,13 @@ runs:
         name: tfplan
         path: ${{ inputs.working_directory }}
 
+    - name: Download Plan Artifact
+      if: inputs.terraform_command == 'apply'
+      uses: actions/download-artifact@v4
+      with:
+        name: tfplan
+        path: ${{ inputs.working_directory }}
+
     - name: Terraform Apply
       if: inputs.terraform_command == 'apply'
       shell: bash
