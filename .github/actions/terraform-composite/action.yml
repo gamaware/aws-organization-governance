@@ -89,3 +89,9 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working_directory }}
       run: terraform apply -auto-approve tfplan
+
+    - name: Terraform Destroy
+      if: inputs.terraform_command == 'destroy'
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: terraform destroy -auto-approve
