@@ -72,16 +72,21 @@ Applied to: Dev OU (ou-srmc-f52jl8so)
 
 ### Workflow
 
-1. **Pull Request:**
-   - Terraform format check
-   - TFLint validation
-   - Checkov security scan
-   - Terraform plan (preview changes)
+```mermaid
+graph LR
+    A[PR] --> B[Merge]
+    B --> C[Plan Runs]
+    C --> D[Review]
+    D --> E[Click Apply]
+    E --> F[Deployed]
+```
 
-2. **Merge to Main:**
-   - Terraform plan (production)
-   - **Manual approval required**
-   - Terraform apply (deploy)
+**Steps:**
+1. Create PR → Linting, security scan, plan preview
+2. Merge to main → Plan runs automatically
+3. Review plan output in Actions tab
+4. Click "Run workflow" on Terraform Apply
+5. Infrastructure deployed
 
 ### Environments
 

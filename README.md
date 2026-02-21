@@ -91,25 +91,6 @@ GitHub Actions workflows handle:
 - **terraform-plan.yml** - Runs on merge to main (automatic plan)
 - **terraform-apply.yml** - Manual trigger (deploy after review)
 
-### Deployment Workflow
-
-```mermaid
-graph TD
-    A[Create PR] --> B[Linting & Security Scan]
-    B --> C[Terraform Plan Preview]
-    C --> D{PR Approved?}
-    D -->|No| A
-    D -->|Yes| E[Merge to Main]
-    E --> F[Terraform Plan Auto-Run]
-    F --> G[Review Plan Output]
-    G --> H{Ready to Deploy?}
-    H -->|No| I[Wait]
-    I --> G
-    H -->|Yes| J[Click 'Run Workflow' Button]
-    J --> K[Terraform Apply]
-    K --> L[Deployment Complete]
-```
-
 ## 📝 License
 
 MIT License - see LICENSE file for details
