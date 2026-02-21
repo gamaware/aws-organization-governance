@@ -7,3 +7,4 @@ terraform {
     use_lockfile = true
   }
 }
+# S3 permissions added to GitHub Actions role
