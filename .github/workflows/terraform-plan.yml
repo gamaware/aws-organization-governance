@@ -6,6 +6,7 @@ on:
     paths:
       - 'terraform/**'
       - '.github/workflows/terraform-plan.yml'
+      - '.github/actions/terraform-composite/**'
 
 permissions:
   id-token: write
