@@ -8,6 +8,33 @@
 
 Infrastructure as Code (IaC) repository for managing AWS Organizations, Organizational Units (OUs), Service Control Policies (SCPs), and governance controls across multiple AWS accounts.
 
+## 🛠️ Prerequisites
+
+- [Terraform](https://www.terraform.io/downloads) >= 1.14.5
+- [AWS CLI](https://aws.amazon.com/cli/) configured with appropriate credentials
+- [pre-commit](https://pre-commit.com/) (optional but recommended)
+
+## 💻 Local Development Setup
+
+### Install Pre-commit Hooks
+
+```bash
+# Install pre-commit
+pip install pre-commit
+
+# Install the git hooks
+pre-commit install
+
+# (Optional) Run against all files
+pre-commit run --all-files
+```
+
+Pre-commit will automatically run checks before each commit:
+- ✅ Terraform formatting
+- ✅ Terraform validation
+- ✅ Secret detection
+- ✅ Trailing whitespace cleanup
+
 ## 📁 Repository Structure
 
 ```
