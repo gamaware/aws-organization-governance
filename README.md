@@ -77,19 +77,26 @@ aws sts get-caller-identity
 .
 ├── .github/
 │   ├── actions/
-│   │   └── terraform-composite/      # Reusable Terraform workflow
-│   └── workflows/
-│       ├── terraform-pr.yml          # PR validation (lint, security, plan)
-│       ├── terraform-plan.yml        # Auto-plan on merge to main
-│       └── terraform-apply.yml       # Manual deployment trigger
+│   │   └── terraform-composite/      # Reusable Terraform action
+│   ├── workflows/
+│   │   ├── terraform-cicd.yml        # Unified CI/CD (plan/apply/destroy)
+│   │   ├── terraform-pr.yml          # PR validation (lint, security, plan)
+│   │   └── update-pre-commit-hooks.yml  # Weekly hook updates
+│   └── dependabot.yml                # Weekly dependency updates
 ├── terraform/
 │   └── scps/
 │       ├── backend.tf                # S3 backend with native locking
 │       ├── versions.tf               # Terraform & provider versions
 │       ├── providers.tf              # AWS provider configuration
-│       └── main.tf                   # Dev SCP policy
+│       ├── variables.tf              # Input variables
+│       ├── terraform.tfvars.example  # Variable template
+│       ├── import.tf                 # Organization import block
+│       ├── main.tf                   # Organization + Dev SCP
+│       └── outputs.tf                # Output values
 ├── docs/
-│   └── architecture.md               # Architecture decisions & design
+│   ├── architecture.md               # Architecture & design decisions
+│   ├── github-oidc-setup.md          # OIDC authentication setup
+│   └── github-variables-setup.md     # GitHub Variables configuration
 ├── .pre-commit-config.yaml           # Pre-commit hook configuration
 ├── .secrets.baseline                 # Detect-secrets baseline
 └── README.md
@@ -124,7 +131,17 @@ aws sts get-caller-identity
 
 2. **Setup development environment** (see Local Development Setup above)
 
-3. **Configure Terraform variables locally**
+3. **Setup AWS OIDC Authentication**
+
+   Follow the [GitHub OIDC Setup Guide](docs/github-oidc-setup.md) to configure
+   OIDC authentication for GitHub Actions.
+
+4. **Configure GitHub Variables**
+
+   Follow the [GitHub Variables Setup Guide](docs/github-variables-setup.md) to
+   configure required Terraform variables.
+
+5. **Configure Terraform variables locally**
 
    ```bash
    cd terraform/scps
@@ -134,24 +151,7 @@ aws sts get-caller-identity
 
    **Note:** `terraform.tfvars` is gitignored and never committed to the repo.
 
-4. **Set GitHub Variables for CI/CD**
-
-   GitHub Actions requires Terraform variables to be set as repository variables:
-
-   ```bash
-   # From your local terraform.tfvars, set GitHub Variables
-   gh variable set TF_VAR_organization_id --body "o-xxxxxxxxxx"
-   gh variable set TF_VAR_dev_ou_id --body "ou-xxxx-xxxxxxxx"
-   gh variable set TF_VAR_aws_region --body "us-east-1"
-   ```
-
-   **Why?** `terraform.tfvars` is not committed (security best practice), so
-   GitHub Actions reads values from repository variables instead. These are
-   injected as `TF_VAR_*` environment variables at runtime.
-
-   **To update variables:** Re-run the `gh variable set` commands with new values.
-
-5. **Initialize Terraform**
+6. **Initialize Terraform**
 
    ```bash
    cd terraform/scps
@@ -195,9 +195,30 @@ aws sts get-caller-identity
 7. **Review plan** in GitHub Actions
 
 8. **Deploy manually:**
-   - Go to Actions → Terraform Apply
+   - Go to Actions → Terraform CI/CD
    - Click "Run workflow"
+   - Select action: `plan`, `apply`, or `destroy`
    - Review and confirm
+
+### Deployment Options
+
+**Plan:**
+
+- Generate execution plan
+- Review changes before applying
+- No infrastructure modifications
+
+**Apply:**
+
+- Deploy infrastructure changes
+- Requires plan review first
+- Updates AWS resources
+
+**Destroy:**
+
+- Remove managed resources
+- Use with caution
+- Requires explicit confirmation
 
 ### Branch Protection
 
@@ -212,23 +233,48 @@ Main branch is protected:
 
 ### GitHub Actions Workflows
 
-**terraform-pr.yml** (Runs on PRs)
+**terraform-cicd.yml** (Unified CI/CD)
+
+- **On PR:** Runs plan automatically
+- **On push to main:** Runs plan automatically
+- **Manual trigger:** Dropdown with 3 options:
+  - `plan` - Generate execution plan
+  - `apply` - Deploy infrastructure changes
+  - `destroy` - Remove managed resources
+- Plan output displayed in GitHub UI
+- Artifact sharing between plan/apply jobs
+- Color output enabled
+
+**terraform-pr.yml** (PR Validation)
 
 - Terraform fmt check
 - TFLint validation
 - Checkov security scan
 - Terraform plan preview
 
-**terraform-plan.yml** (Runs on push to main)
+**update-pre-commit-hooks.yml** (Weekly Maintenance)
 
-- Automatic plan generation
-- Plan output in Actions logs
+- Runs every Sunday
+- Updates pre-commit hook versions
+- Auto-creates PR with changes
 
-**terraform-apply.yml** (Manual trigger)
+**Dependabot** (Weekly Maintenance)
 
-- Requires manual approval
-- Deploys infrastructure changes
-- Only runs after reviewing plan
+- Updates GitHub Actions versions
+- Updates Terraform provider versions
+- Auto-creates PRs
+
+### Authentication
+
+**OIDC (OpenID Connect):**
+
+- No long-lived AWS credentials stored in GitHub
+- Temporary credentials via AWS STS AssumeRoleWithWebIdentity
+- Role: `GitHubActions-OrganizationGovernance`
+- Permissions: AWSOrganizationsFullAccess + S3 state access
+- Repository-scoped trust policy
+
+See [GitHub OIDC Setup Guide](docs/github-oidc-setup.md) for details.
 
 ### Defense in Depth
 
@@ -257,9 +303,17 @@ Main branch is protected:
 - Explicit approval to apply
 - Deployment gate via workflow_dispatch
 
+#### Layer 5: Automated Updates
+
+- Weekly dependency updates (Dependabot)
+- Weekly hook updates (pre-commit autoupdate)
+- Auto-created PRs for review
+
 ## 🔗 Quick Links
 
 - [Architecture Documentation](docs/architecture.md)
+- [GitHub OIDC Setup Guide](docs/github-oidc-setup.md)
+- [GitHub Variables Setup Guide](docs/github-variables-setup.md)
 - [GitHub Actions](https://github.com/gamaware/aws-organization-governance/actions)
 - [AWS Organizations Console](https://console.aws.amazon.com/organizations/)
 

@@ -1,0 +1,107 @@
+# GitHub Variables Setup
+
+This guide covers configuring GitHub Variables for Terraform deployments via
+GitHub Actions.
+
+## Prerequisites
+
+- GitHub repository created
+- GitHub CLI (`gh`) installed and authenticated
+- Terraform variables defined in your configuration
+
+## Required Variables
+
+The following variables must be configured for the CI/CD pipeline:
+
+| Variable Name | Description | Example |
+|---------------|-------------|---------|
+| `TF_VAR_organization_id` | AWS Organization ID | `o-xxxxxxxxxx` |
+| `TF_VAR_dev_ou_id` | Development OU ID | `ou-xxxx-xxxxxxxx` |
+| `TF_VAR_aws_region` | AWS Region | `us-east-1` |
+
+## Setup via GitHub CLI
+
+```bash
+gh variable set TF_VAR_organization_id --body "<ORGANIZATION_ID>"
+gh variable set TF_VAR_dev_ou_id --body "<DEV_OU_ID>"
+gh variable set TF_VAR_aws_region --body "<AWS_REGION>"
+```
+
+**Verify variables:**
+
+```bash
+gh variable list
+```
+
+Expected output:
+
+```text
+TF_VAR_organization_id  <ORGANIZATION_ID>
+TF_VAR_dev_ou_id        <DEV_OU_ID>
+TF_VAR_aws_region       <AWS_REGION>
+```
+
+## Setup via GitHub UI
+
+1. Go to: `https://github.com/<GITHUB_ORG>/<REPO_NAME>/settings/variables/actions`
+2. Click "New repository variable" for each variable:
+   - **Name:** `TF_VAR_organization_id`
+     **Value:** `<ORGANIZATION_ID>`
+   - **Name:** `TF_VAR_dev_ou_id`
+     **Value:** `<DEV_OU_ID>`
+   - **Name:** `TF_VAR_aws_region`
+     **Value:** `<AWS_REGION>`
+
+## Getting Variable Values
+
+### Organization ID
+
+```bash
+aws organizations describe-organization --query 'Organization.Id' --output text
+```
+
+### Development OU ID
+
+```bash
+aws organizations list-organizational-units-for-parent \
+  --parent-id <ROOT_ID> \
+  --query 'OrganizationalUnits[?Name==`Dev`].Id' \
+  --output text
+```
+
+### AWS Region
+
+Use your preferred region (e.g., `us-east-1`, `us-west-2`, `eu-west-1`)
+
+## Updating Variables
+
+To update a variable:
+
+```bash
+gh variable set TF_VAR_organization_id --body "<NEW_VALUE>"
+```
+
+Or via GitHub UI:
+
+1. Go to repository settings → Variables
+2. Click on the variable name
+3. Update the value
+4. Click "Update variable"
+
+## Troubleshooting
+
+### Variable not set in workflow
+
+- Verify variables exist: `gh variable list`
+- Check variable names match exactly (case-sensitive)
+- Ensure variables are set at repository level, not environment level
+
+### Invalid organization ID
+
+- Verify format: `o-` followed by 10 alphanumeric characters
+- Check you're using the correct AWS account
+
+## References
+
+- [GitHub Variables Documentation](https://docs.github.com/en/actions/learn-github-actions/variables)
+- [Terraform Environment Variables](https://developer.hashicorp.com/terraform/cli/config/environment-variables)

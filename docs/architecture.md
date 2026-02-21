@@ -99,32 +99,70 @@ terraform {
 - Automatic cleanup of stale locks
 - Lower cost (no DynamoDB charges)
 
-### Workflow
+### CI/CD Workflow
 
 ```mermaid
-graph LR
-    A[Feature Branch] --> B[Commit]
-    B --> C[Pre-commit Hooks]
-    C --> D[Push & Create PR]
-    D --> E[CI: Lint + Security + Plan]
-    E --> F[Approve & Merge]
-    F --> G[Auto Plan on Main]
-    G --> H[Review Plan Output]
-    H --> I[Manual Apply Trigger]
-    I --> J[Deployed]
+graph TB
+    subgraph "Local Development"
+        A[Feature Branch] --> B[Make Changes]
+        B --> C[Pre-commit Hooks]
+        C --> D[Push Branch]
+    end
+
+    subgraph "Pull Request"
+        D --> E[Create PR]
+        E --> F[PR Workflow]
+        F --> G[Lint: fmt + tflint]
+        G --> H[Security: Checkov]
+        H --> I[Plan Preview]
+        I --> J{Checks Pass?}
+        J -->|No| K[Fix Issues]
+        K --> B
+        J -->|Yes| L[Review & Approve]
+    end
+
+    subgraph "Main Branch"
+        L --> M[Merge to Main]
+        M --> N[Auto Plan]
+        N --> O[Review Plan Output]
+    end
+
+    subgraph "Deployment"
+        O --> P{Manual Trigger}
+        P -->|plan| Q[Run Plan]
+        P -->|apply| R[Deploy Changes]
+        P -->|destroy| S[Destroy Resources]
+        Q --> O
+        R --> T[Infrastructure Updated]
+        S --> U[Resources Removed]
+    end
+
+    subgraph "Automated Updates"
+        V[Weekly: Dependabot] --> W[Update Dependencies]
+        X[Weekly: Pre-commit] --> Y[Update Hooks]
+        W --> E
+        Y --> E
+    end
 ```
 
-**Steps:**
+**Development Flow:**
 
-1. Create feature branch
-2. Make changes, commit (pre-commit hooks run locally)
-3. Push and create PR
-4. CI runs: terraform fmt, tflint, checkov, plan preview
-5. Approve and merge PR
-6. Plan runs automatically on main
-7. Review plan output in Actions
-8. Manually trigger apply workflow
-9. Infrastructure deployed
+1. **Local:** Create feature branch, make changes, pre-commit hooks validate
+2. **PR:** Push branch, create PR, automated checks run (lint, security, plan)
+3. **Review:** Approve PR after checks pass
+4. **Merge:** Merge to main, plan runs automatically
+5. **Deploy:** Review plan, manually trigger apply via workflow_dispatch
+
+**Deployment Options:**
+
+- **plan:** Generate and review execution plan
+- **apply:** Deploy infrastructure changes
+- **destroy:** Remove managed resources
+
+**Automated Maintenance:**
+
+- **Dependabot:** Weekly updates for GitHub Actions and Terraform providers
+- **Pre-commit Autoupdate:** Weekly updates for hook versions
 
 ## Security Controls
 
@@ -134,6 +172,7 @@ graph LR
 
 - Terraform fmt & validate
 - Secret detection (detect-secrets)
+- Private key detection
 - YAML validation
 - Markdown linting (markdownlint)
 - GitHub Actions validation (actionlint)
@@ -141,10 +180,21 @@ graph LR
 
 #### 2. GitHub Actions (CI)
 
+**PR Workflow (`terraform-pr.yml`):**
+
 - TFLint (Terraform best practices)
 - Checkov (security & compliance)
 - Terraform plan preview
 - Runs on every PR
+
+**CI/CD Workflow (`terraform-cicd.yml`):**
+
+- Unified workflow for plan/apply/destroy
+- Auto-runs plan on push to main
+- Manual trigger with action dropdown
+- Artifact sharing between jobs
+- Plan summary in GitHub UI
+- Color output enabled
 
 #### 3. Branch Protection
 
@@ -156,8 +206,34 @@ graph LR
 #### 4. Manual Deployment Gate
 
 - Human review required
-- Explicit workflow trigger
+- Explicit workflow trigger via workflow_dispatch
+- Three actions: plan, apply, destroy
 - Plan review before apply
+
+#### 5. Automated Updates
+
+**Dependabot (`dependabot.yml`):**
+
+- Weekly updates for GitHub Actions
+- Weekly updates for Terraform providers
+- Auto-creates PRs
+
+**Pre-commit Autoupdate (`update-pre-commit-hooks.yml`):**
+
+- Weekly updates for pre-commit hooks
+- Auto-creates PRs with updated versions
+
+### Authentication
+
+**GitHub Actions OIDC:**
+
+- No long-lived credentials stored
+- Temporary tokens via AWS STS
+- Repository-scoped trust policy
+- Role: `GitHubActions-OrganizationGovernance`
+- Permissions: AWSOrganizationsFullAccess + S3 state access
+
+See [GitHub OIDC Setup Guide](github-oidc-setup.md) for configuration details.
 
 ### Preventive Controls (SCPs)
 
@@ -180,3 +256,4 @@ graph LR
 - All deployments require approval
 - Security scanning on every change
 - Immutable state history (S3 versioning)
+- Weekly dependency updates
