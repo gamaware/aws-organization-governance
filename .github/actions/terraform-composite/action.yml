@@ -57,6 +57,21 @@ runs:
       working-directory: ${{ inputs.working_directory }}
       run: terraform plan -no-color -out=tfplan
 
+    - name: Upload Plan Artifact
+      if: inputs.terraform_command == 'plan'
+      uses: actions/upload-artifact@v4
+      with:
+        name: tfplan
+        path: ${{ inputs.working_directory }}/tfplan
+        retention-days: 1
+
+    - name: Download Plan Artifact
+      if: inputs.terraform_command == 'apply'
+      uses: actions/download-artifact@v4
+      with:
+        name: tfplan
+        path: ${{ inputs.working_directory }}
+
     - name: Terraform Apply
       if: inputs.terraform_command == 'apply'
       shell: bash
