@@ -44,7 +44,7 @@ jobs:
           terraform_command: plan
           working_directory: terraform/scps
           aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
-          aws_region: us-east-1
+          aws_region: ${{ vars.TF_VAR_aws_region }}
 
   terraform-apply:
     name: Terraform Apply
@@ -65,4 +65,4 @@ jobs:
           terraform_command: apply
           working_directory: terraform/scps
           aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
-          aws_region: us-east-1
+          aws_region: ${{ vars.TF_VAR_aws_region }}
