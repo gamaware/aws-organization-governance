@@ -11,6 +11,10 @@ jobs:
   terraform-apply:
     name: Terraform Apply
     runs-on: ubuntu-latest
+    env:
+      TF_VAR_organization_id: ${{ vars.TF_VAR_organization_id }}
+      TF_VAR_dev_ou_id: ${{ vars.TF_VAR_dev_ou_id }}
+      TF_VAR_aws_region: ${{ vars.TF_VAR_aws_region }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6

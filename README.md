@@ -124,7 +124,34 @@ aws sts get-caller-identity
 
 2. **Setup development environment** (see Local Development Setup above)
 
-3. **Initialize Terraform**
+3. **Configure Terraform variables locally**
+
+   ```bash
+   cd terraform/scps
+   cp terraform.tfvars.example terraform.tfvars
+   # Edit terraform.tfvars with your values
+   ```
+
+   **Note:** `terraform.tfvars` is gitignored and never committed to the repo.
+
+4. **Set GitHub Variables for CI/CD**
+
+   GitHub Actions requires Terraform variables to be set as repository variables:
+
+   ```bash
+   # From your local terraform.tfvars, set GitHub Variables
+   gh variable set TF_VAR_organization_id --body "o-xxxxxxxxxx"
+   gh variable set TF_VAR_dev_ou_id --body "ou-xxxx-xxxxxxxx"
+   gh variable set TF_VAR_aws_region --body "us-east-1"
+   ```
+
+   **Why?** `terraform.tfvars` is not committed (security best practice), so
+   GitHub Actions reads values from repository variables instead. These are
+   injected as `TF_VAR_*` environment variables at runtime.
+
+   **To update variables:** Re-run the `gh variable set` commands with new values.
+
+5. **Initialize Terraform**
 
    ```bash
    cd terraform/scps
