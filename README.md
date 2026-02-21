@@ -57,6 +57,8 @@ pre-commit run --all-files
 - ✅ Terraform validate (syntax check)
 - ✅ Secret detection (blocks commits with secrets)
 - ✅ YAML validation
+- ✅ Markdown linting (auto-fixes formatting)
+- ✅ GitHub Actions validation (workflow syntax)
 - ✅ Trailing whitespace cleanup
 
 ### 3. Configure AWS Credentials
@@ -206,8 +208,9 @@ Main branch is protected:
 #### Layer 1: Pre-commit (Local)
 
 - Fast feedback before commit
-- Auto-fixes formatting issues
+- Auto-fixes formatting issues (Terraform, Markdown)
 - Blocks secrets from being committed
+- Validates YAML and GitHub Actions workflows
 
 #### Layer 2: GitHub Actions (CI)
 

@@ -103,31 +103,28 @@ terraform {
 
 ```mermaid
 graph LR
-    A[Feature Branch] --> B[Create PR]
-    B --> C[CI Checks]
-    C --> D[Approve & Merge]
-    D --> E[Auto Plan]
-    E --> F[Review Plan]
-    F --> G[Manual Apply]
-    G --> H[Deployed]
+    A[Feature Branch] --> B[Commit]
+    B --> C[Pre-commit Hooks]
+    C --> D[Push & Create PR]
+    D --> E[CI: Lint + Security + Plan]
+    E --> F[Approve & Merge]
+    F --> G[Auto Plan on Main]
+    G --> H[Review Plan Output]
+    H --> I[Manual Apply Trigger]
+    I --> J[Deployed]
 ```
 
 **Steps:**
 
 1. Create feature branch
-2. Make changes, commit (pre-commit hooks run)
+2. Make changes, commit (pre-commit hooks run locally)
 3. Push and create PR
-4. CI runs: lint, security scan, plan preview
+4. CI runs: terraform fmt, tflint, checkov, plan preview
 5. Approve and merge PR
 6. Plan runs automatically on main
 7. Review plan output in Actions
 8. Manually trigger apply workflow
 9. Infrastructure deployed
-
-### Environments
-
-- **plan:** No approval required (preview only)
-- **production:** Requires manual approval before apply
 
 ## Security Controls
 
@@ -138,6 +135,8 @@ graph LR
 - Terraform fmt & validate
 - Secret detection (detect-secrets)
 - YAML validation
+- Markdown linting (markdownlint)
+- GitHub Actions validation (actionlint)
 - Blocks commits with issues
 
 #### 2. GitHub Actions (CI)
