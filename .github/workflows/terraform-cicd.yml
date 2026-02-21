@@ -71,6 +71,66 @@ jobs:
           aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
           aws_region: ${{ vars.TF_VAR_aws_region }}
 
+      - name: Post-Deployment Validation
+        run: |
+          # shellcheck disable=SC2016
+          echo "🔍 Validating deployment..."
+
+          # Validate Organization
+          echo "Checking organization..."
+          ORG_ID=$(aws organizations describe-organization --query 'Organization.Id' --output text)
+          EXPECTED_ORG="${{ vars.TF_VAR_organization_id }}"
+          if [ "$ORG_ID" != "$EXPECTED_ORG" ]; then
+            echo "❌ Organization ID mismatch"
+            exit 1
+          fi
+          echo "✅ Organization verified: ${ORG_ID}"
+
+          # Validate SCPs enabled
+          echo "Checking SCP policy type..."
+          SCP_ENABLED=$(aws organizations list-roots --query 'Roots[0].PolicyTypes[?Type==\`SERVICE_CONTROL_POLICY\`].Status' --output text)
+          if [ "$SCP_ENABLED" != "ENABLED" ]; then
+            echo "❌ SCPs not enabled"
+            exit 1
+          fi
+          echo "✅ SCPs enabled"
+
+          # Validate Dev SCP exists
+          echo "Checking Dev SCP policy..."
+          DEV_SCP=$(aws organizations list-policies --filter SERVICE_CONTROL_POLICY --query 'Policies[?Name==\`dev-scp\`].Id' --output text)
+          if [ -z "$DEV_SCP" ]; then
+            echo "❌ Dev SCP policy not found"
+            exit 1
+          fi
+          echo "✅ Dev SCP policy exists: ${DEV_SCP}"
+
+          # Validate SCP attached to Dev OU
+          echo "Checking SCP attachment..."
+          DEV_OU="${{ vars.TF_VAR_dev_ou_id }}"
+          ATTACHED=$(aws organizations list-policies-for-target --target-id "$DEV_OU" --filter SERVICE_CONTROL_POLICY --query 'Policies[?Name==\`dev-scp\`].Id' --output text)
+          if [ -z "$ATTACHED" ]; then
+            echo "❌ Dev SCP not attached to Dev OU"
+            exit 1
+          fi
+          echo "✅ Dev SCP attached to Dev OU"
+
+          # Validate SCP content (check for key restrictions)
+          echo "Validating SCP content..."
+          POLICY_CONTENT=$(aws organizations describe-policy --policy-id "${DEV_SCP}" --query 'Policy.Content' --output text)
+          if ! echo "$POLICY_CONTENT" | grep -q "us-east-1"; then
+            echo "❌ Region restriction not found in policy"
+            exit 1
+          fi
+          echo "✅ SCP content validated (region restriction present)"
+
+          echo ""
+          echo "✅ All validations passed!"
+          echo "📊 Deployment Summary:"
+          echo "  - Organization: ${ORG_ID}"
+          echo "  - Dev OU: ${DEV_OU}"
+          echo "  - Dev SCP: ${DEV_SCP}"
+          echo "  - Status: Deployed and validated"
+
   terraform-destroy:
     name: Terraform Destroy
     runs-on: ubuntu-latest
