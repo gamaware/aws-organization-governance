@@ -1,4 +1,4 @@
-# Enable Service Control Policies in the organization
+# Manage existing AWS Organization and enable SCPs
 resource "aws_organizations_organization" "org" {
   feature_set = "ALL"
 
@@ -9,6 +9,7 @@ resource "aws_organizations_organization" "org" {
 
 # Dev OU Service Control Policy
 resource "aws_organizations_policy" "dev_scp" {
+  depends_on  = [aws_organizations_organization.org]
   name        = "DevEnvironmentRestrictions"
   description = "Cost controls and security guardrails for Dev OU"
   type        = "SERVICE_CONTROL_POLICY"
@@ -109,5 +110,5 @@ resource "aws_organizations_policy" "dev_scp" {
 
 resource "aws_organizations_policy_attachment" "dev_scp_attachment" {
   policy_id = aws_organizations_policy.dev_scp.id
-  target_id = "ou-srmc-f52jl8so"
+  target_id = var.dev_ou_id
 }
