@@ -66,27 +66,55 @@ Applied to: Dev OU (ou-srmc-f52jl8so)
 
 ### Infrastructure as Code
 
-- **Tool:** Terraform
+- **Tool:** Terraform 1.14.5
+- **Provider:** AWS ~> 6.0 (latest: 6.33.0)
+- **Backend:** S3 with native locking (no DynamoDB)
 - **Version Control:** GitHub
 - **CI/CD:** GitHub Actions
+
+### Terraform Backend Configuration
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket       = "terraform-state-aws-org-governance-557690606827"
+    key          = "scps/terraform.tfstate"
+    region       = "us-east-1"
+    encrypt      = true
+    use_lockfile = true  # S3 native locking (Terraform 1.14+)
+  }
+}
+```
+
+**Why S3 native locking?**
+- No DynamoDB table required (simpler infrastructure)
+- Built-in to Terraform 1.14+
+- Automatic cleanup of stale locks
+- Lower cost (no DynamoDB charges)
 
 ### Workflow
 
 ```mermaid
 graph LR
-    A[PR] --> B[Merge]
-    B --> C[Plan Runs]
-    C --> D[Review]
-    D --> E[Click Apply]
-    E --> F[Deployed]
+    A[Feature Branch] --> B[Create PR]
+    B --> C[CI Checks]
+    C --> D[Approve & Merge]
+    D --> E[Auto Plan]
+    E --> F[Review Plan]
+    F --> G[Manual Apply]
+    G --> H[Deployed]
 ```
 
 **Steps:**
-1. Create PR → Linting, security scan, plan preview
-2. Merge to main → Plan runs automatically
-3. Review plan output in Actions tab
-4. Click "Run workflow" on Terraform Apply
-5. Infrastructure deployed
+1. Create feature branch
+2. Make changes, commit (pre-commit hooks run)
+3. Push and create PR
+4. CI runs: lint, security scan, plan preview
+5. Approve and merge PR
+6. Plan runs automatically on main
+7. Review plan output in Actions
+8. Manually trigger apply workflow
+9. Infrastructure deployed
 
 ### Environments
 
@@ -95,18 +123,46 @@ graph LR
 
 ## Security Controls
 
+### Defense in Depth Layers
+
+**1. Pre-commit Hooks (Local)**
+- Terraform fmt & validate
+- Secret detection (detect-secrets)
+- YAML validation
+- Blocks commits with issues
+
+**2. GitHub Actions (CI)**
+- TFLint (Terraform best practices)
+- Checkov (security & compliance)
+- Terraform plan preview
+- Runs on every PR
+
+**3. Branch Protection**
+- Requires PR approval
+- Status checks must pass
+- No direct commits to main
+- No force pushes
+
+**4. Manual Deployment Gate**
+- Human review required
+- Explicit workflow trigger
+- Plan review before apply
+
 ### Preventive Controls (SCPs)
 - Region restrictions
 - Instance type restrictions
 - Root user blocking
 - Organization protection
+- CloudTrail protection
 
 ### Detective Controls
-- CloudTrail (cannot be disabled)
+- CloudTrail (cannot be disabled via SCP)
 - AWS Config (recommended)
 - Security Hub (recommended)
+- GitHub Actions audit logs
 
 ### Compliance
 - All infrastructure changes tracked in Git
 - All deployments require approval
 - Security scanning on every change
+- Immutable state history (S3 versioning)
