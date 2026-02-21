@@ -1,0 +1,64 @@
+name: 'Terraform Composite Action'
+description: 'Reusable composite action for Terraform operations'
+
+inputs:
+  terraform_version:
+    description: 'Terraform version to use'
+    required: false
+    default: '1.7.0'
+  working_directory:
+    description: 'Directory containing Terraform configuration'
+    required: true
+  terraform_command:
+    description: 'Terraform command to run (init, plan, apply)'
+    required: true
+  aws_region:
+    description: 'AWS region'
+    required: false
+    default: 'us-east-1'
+  aws_role_arn:
+    description: 'AWS IAM role ARN for OIDC authentication'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.aws_role_arn }}
+        aws-region: ${{ inputs.aws_region }}
+        role-session-name: GitHubActions-Terraform
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ inputs.terraform_version }}
+
+    - name: Terraform Init
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: terraform init
+
+    - name: Terraform Format Check
+      if: inputs.terraform_command == 'plan'
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: terraform fmt -check -recursive
+
+    - name: Terraform Validate
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: terraform validate
+
+    - name: Terraform Plan
+      if: inputs.terraform_command == 'plan'
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: terraform plan -no-color -out=tfplan
+
+    - name: Terraform Apply
+      if: inputs.terraform_command == 'apply'
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: terraform apply -auto-approve
