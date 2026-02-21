@@ -44,6 +44,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: terraform-plan
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: development
+      url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
     env:
       TF_VAR_organization_id: ${{ vars.TF_VAR_organization_id }}
       TF_VAR_dev_ou_id: ${{ vars.TF_VAR_dev_ou_id }}
