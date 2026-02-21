@@ -72,15 +72,16 @@ jobs:
           aws_region: ${{ vars.TF_VAR_aws_region }}
 
       - name: Post-Deployment Validation
+        env:
+          EXPECTED_ORG_ID: ${{ vars.TF_VAR_organization_id }}
+          EXPECTED_DEV_OU: ${{ vars.TF_VAR_dev_ou_id }}
         run: |
-          # shellcheck disable=SC2016
           echo "🔍 Validating deployment..."
 
           # Validate Organization
           echo "Checking organization..."
           ORG_ID=$(aws organizations describe-organization --query 'Organization.Id' --output text)
-          EXPECTED_ORG="${{ vars.TF_VAR_organization_id }}"
-          if [ "$ORG_ID" != "$EXPECTED_ORG" ]; then
+          if [ "$ORG_ID" != "$EXPECTED_ORG_ID" ]; then
             echo "❌ Organization ID mismatch"
             exit 1
           fi
@@ -88,7 +89,7 @@ jobs:
 
           # Validate SCPs enabled
           echo "Checking SCP policy type..."
-          SCP_ENABLED=$(aws organizations list-roots --query 'Roots[0].PolicyTypes[?Type==\`SERVICE_CONTROL_POLICY\`].Status' --output text)
+          SCP_ENABLED=$(aws organizations list-roots --query "Roots[0].PolicyTypes[?Type==\`SERVICE_CONTROL_POLICY\`].Status" --output text)
           if [ "$SCP_ENABLED" != "ENABLED" ]; then
             echo "❌ SCPs not enabled"
             exit 1
@@ -97,7 +98,7 @@ jobs:
 
           # Validate Dev SCP exists
           echo "Checking Dev SCP policy..."
-          DEV_SCP=$(aws organizations list-policies --filter SERVICE_CONTROL_POLICY --query 'Policies[?Name==\`dev-scp\`].Id' --output text)
+          DEV_SCP=$(aws organizations list-policies --filter SERVICE_CONTROL_POLICY --query "Policies[?Name==\`dev-scp\`].Id" --output text)
           if [ -z "$DEV_SCP" ]; then
             echo "❌ Dev SCP policy not found"
             exit 1
@@ -106,8 +107,7 @@ jobs:
 
           # Validate SCP attached to Dev OU
           echo "Checking SCP attachment..."
-          DEV_OU="${{ vars.TF_VAR_dev_ou_id }}"
-          ATTACHED=$(aws organizations list-policies-for-target --target-id "$DEV_OU" --filter SERVICE_CONTROL_POLICY --query 'Policies[?Name==\`dev-scp\`].Id' --output text)
+          ATTACHED=$(aws organizations list-policies-for-target --target-id "$EXPECTED_DEV_OU" --filter SERVICE_CONTROL_POLICY --query "Policies[?Name==\`dev-scp\`].Id" --output text)
           if [ -z "$ATTACHED" ]; then
             echo "❌ Dev SCP not attached to Dev OU"
             exit 1
@@ -127,7 +127,7 @@ jobs:
           echo "✅ All validations passed!"
           echo "📊 Deployment Summary:"
           echo "  - Organization: ${ORG_ID}"
-          echo "  - Dev OU: ${DEV_OU}"
+          echo "  - Dev OU: ${EXPECTED_DEV_OU}"
           echo "  - Dev SCP: ${DEV_SCP}"
           echo "  - Status: Deployed and validated"
 
