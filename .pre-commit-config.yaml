@@ -5,6 +5,7 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
+      - id: check-json
       - id: check-added-large-files
       - id: check-merge-conflict
       - id: detect-private-key
@@ -27,6 +28,7 @@ repos:
     hooks:
       - id: terraform_fmt
       - id: terraform_validate
+      - id: terraform_tflint
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.43.0
@@ -38,3 +40,9 @@ repos:
     rev: v1.7.11
     hooks:
       - id: actionlint
+
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.6.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
