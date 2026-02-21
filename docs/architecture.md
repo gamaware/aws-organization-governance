@@ -2,7 +2,7 @@
 
 ## Organization Structure
 
-```
+```text
 Organization (o-3ffm2cc86k)
 ├─ Management Account: General (557690606827)
 │  └─ Alias: alex-garcia-general
@@ -32,15 +32,19 @@ Organization (o-3ffm2cc86k)
 Applied to: Dev OU (ou-srmc-f52jl8so)
 
 **Guardrails:**
+
 - Restrict to us-east-1 region only
-- Allow only cost-effective EC2 instances (t2, t3, t3a, t4g families)
-- Allow only cost-effective RDS instances (db.t2, db.t3, db.t4g families)
+- Allow only cost-effective EC2 instances (t2, t3, t3a, t4g
+  families)
+- Allow only cost-effective RDS instances (db.t2, db.t3, db.t4g
+  families)
 - Prevent leaving organization
 - Block root user actions
 - Prevent CloudTrail deletion/modification
 - Block Reserved Instance purchases
 
-**Purpose:** Enable developers to experiment and build while maintaining cost controls and security guardrails.
+**Purpose:** Enable developers to experiment and build while
+maintaining cost controls and security guardrails.
 
 ## IAM Strategy
 
@@ -51,12 +55,14 @@ Applied to: Dev OU (ou-srmc-f52jl8so)
 **Members:** 7 developers
 
 **Permissions:**
+
 - Full access to AWS services (Lambda, S3, EC2, RDS, etc.)
 - Can create IAM roles for applications
 - Can pass roles to services
 - Cannot modify users, groups, or their own permissions
 
 **Guardrails (via SCP):**
+
 - Even with PowerUser access, cannot violate SCP restrictions
 - Cannot launch expensive resources
 - Cannot use regions outside us-east-1
@@ -87,6 +93,7 @@ terraform {
 ```
 
 **Why S3 native locking?**
+
 - No DynamoDB table required (simpler infrastructure)
 - Built-in to Terraform 1.14+
 - Automatic cleanup of stale locks
@@ -106,6 +113,7 @@ graph LR
 ```
 
 **Steps:**
+
 1. Create feature branch
 2. Make changes, commit (pre-commit hooks run)
 3. Push and create PR
@@ -125,30 +133,35 @@ graph LR
 
 ### Defense in Depth Layers
 
-**1. Pre-commit Hooks (Local)**
+#### 1. Pre-commit Hooks (Local)
+
 - Terraform fmt & validate
 - Secret detection (detect-secrets)
 - YAML validation
 - Blocks commits with issues
 
-**2. GitHub Actions (CI)**
+#### 2. GitHub Actions (CI)
+
 - TFLint (Terraform best practices)
 - Checkov (security & compliance)
 - Terraform plan preview
 - Runs on every PR
 
-**3. Branch Protection**
+#### 3. Branch Protection
+
 - Requires PR approval
 - Status checks must pass
 - No direct commits to main
 - No force pushes
 
-**4. Manual Deployment Gate**
+#### 4. Manual Deployment Gate
+
 - Human review required
 - Explicit workflow trigger
 - Plan review before apply
 
 ### Preventive Controls (SCPs)
+
 - Region restrictions
 - Instance type restrictions
 - Root user blocking
@@ -156,12 +169,14 @@ graph LR
 - CloudTrail protection
 
 ### Detective Controls
+
 - CloudTrail (cannot be disabled via SCP)
 - AWS Config (recommended)
 - Security Hub (recommended)
 - GitHub Actions audit logs
 
 ### Compliance
+
 - All infrastructure changes tracked in Git
 - All deployments require approval
 - Security scanning on every change

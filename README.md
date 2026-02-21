@@ -6,12 +6,15 @@
 
 ## 🚀 Overview
 
-Infrastructure as Code (IaC) repository for managing AWS Organizations, Organizational Units (OUs), Service Control Policies (SCPs), and governance controls across multiple AWS accounts.
+Infrastructure as Code (IaC) repository for managing AWS Organizations,
+Organizational Units (OUs), Service Control Policies (SCPs), and governance
+controls across multiple AWS accounts.
 
 ## 🛠️ Prerequisites
 
 - [tfenv](https://github.com/tfutils/tfenv) - Terraform version manager
-- [AWS CLI](https://aws.amazon.com/cli/) configured with management account credentials
+- [AWS CLI](https://aws.amazon.com/cli/) configured with management
+  account credentials
 - Python 3.x (for pre-commit hooks)
 - Git
 
@@ -49,6 +52,7 @@ pre-commit run --all-files
 ```
 
 **Pre-commit checks:**
+
 - ✅ Terraform fmt (auto-fixes formatting)
 - ✅ Terraform validate (syntax check)
 - ✅ Secret detection (blocks commits with secrets)
@@ -67,7 +71,7 @@ aws sts get-caller-identity
 
 ## 📁 Repository Structure
 
-```
+```text
 .
 ├── .github/
 │   ├── actions/
@@ -94,6 +98,7 @@ aws sts get-caller-identity
 ### Terraform Backend
 
 **S3 Bucket:** `terraform-state-aws-org-governance-557690606827`
+
 - Region: us-east-1
 - Versioning: Enabled
 - Encryption: AES256
@@ -109,6 +114,7 @@ aws sts get-caller-identity
 ### Initial Setup (One-time)
 
 1. **Clone repository**
+
    ```bash
    git clone https://github.com/gamaware/aws-organization-governance.git
    cd aws-organization-governance
@@ -117,6 +123,7 @@ aws sts get-caller-identity
 2. **Setup development environment** (see Local Development Setup above)
 
 3. **Initialize Terraform**
+
    ```bash
    cd terraform/scps
    terraform init
@@ -124,14 +131,16 @@ aws sts get-caller-identity
 
 ### Development Workflow
 
-**Feature Branch → PR → Merge → Deploy**
+#### Feature Branch → PR → Merge → Deploy
 
 1. **Create feature branch**
+
    ```bash
    git checkout -b feature/my-change
    ```
 
 2. **Make changes and commit**
+
    ```bash
    # Pre-commit hooks run automatically
    git add .
@@ -139,6 +148,7 @@ aws sts get-caller-identity
    ```
 
 3. **Push and create PR**
+
    ```bash
    git push origin feature/my-change
    # Create PR on GitHub
@@ -163,6 +173,7 @@ aws sts get-caller-identity
 ### Branch Protection
 
 Main branch is protected:
+
 - ✅ Requires PR with 1 approval
 - ✅ Requires passing status checks
 - ✅ No direct pushes (admins can bypass)
@@ -173,38 +184,45 @@ Main branch is protected:
 ### GitHub Actions Workflows
 
 **terraform-pr.yml** (Runs on PRs)
+
 - Terraform fmt check
 - TFLint validation
 - Checkov security scan
 - Terraform plan preview
 
 **terraform-plan.yml** (Runs on push to main)
+
 - Automatic plan generation
 - Plan output in Actions logs
 
 **terraform-apply.yml** (Manual trigger)
+
 - Requires manual approval
 - Deploys infrastructure changes
 - Only runs after reviewing plan
 
 ### Defense in Depth
 
-**Layer 1: Pre-commit (Local)**
+#### Layer 1: Pre-commit (Local)
+
 - Fast feedback before commit
 - Auto-fixes formatting issues
 - Blocks secrets from being committed
 
-**Layer 2: GitHub Actions (CI)**
+#### Layer 2: GitHub Actions (CI)
+
 - Enforced validation on every PR
 - Security scanning with Checkov
 - Plan preview before merge
 
-**Layer 3: Branch Protection**
+#### Layer 3: Branch Protection
+
 - PR approval required
 - Status checks must pass
 - Prevents accidental direct commits
 
-**Layer 4: Manual Deployment**
+#### Layer 4: Manual Deployment
+
 - Human review of plan output
 - Explicit approval to apply
 - Deployment gate via workflow_dispatch
@@ -226,4 +244,5 @@ Created by [Alex Garcia](https://github.com/gamaware)
 - [LinkedIn Profile](https://www.linkedin.com/in/gamaware/)
 - [Personal Website](https://alexgarcia.info/)
 
-> **Disclaimer**: All views and opinions expressed in this repository are my own and do not represent the opinions of my employer.
+> **Disclaimer**: All views and opinions expressed in this repository
+> are my own and do not represent the opinions of my employer.
