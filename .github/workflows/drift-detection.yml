@@ -1,0 +1,32 @@
+name: Drift Detection
+
+on:
+  schedule:
+    # Run daily at 9 AM UTC (3 AM CST)
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+
+jobs:
+  detect-drift:
+    name: Detect Configuration Drift
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect Drift
+        uses: ./.github/actions/drift-detection-composite
+        with:
+          working_directory: terraform/scps
+          aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
+          aws_region: us-east-1
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          TF_VAR_organization_id: ${{ vars.TF_VAR_organization_id }}
+          TF_VAR_dev_ou_id: ${{ vars.TF_VAR_dev_ou_id }}
+          TF_VAR_aws_region: ${{ vars.TF_VAR_aws_region }}

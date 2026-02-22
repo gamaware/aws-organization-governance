@@ -50,6 +50,27 @@ jobs:
           aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
           aws_region: ${{ vars.TF_VAR_aws_region }}
 
+      # Infracost - Cost estimation (commented for now)
+      # Uncomment and add INFRACOST_API_KEY secret to enable
+      # - name: Setup Infracost
+      #   uses: infracost/actions/setup@v3
+      #   with:
+      #     api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      # - name: Generate Infracost JSON
+      #   run: |
+      #     cd terraform/scps
+      #     infracost breakdown --path . \
+      #       --format json \
+      #       --out-file /tmp/infracost.json
+
+      # - name: Post Infracost Comment
+      #   if: github.event_name == 'pull_request'
+      #   uses: infracost/actions/comment@v3
+      #   with:
+      #     path: /tmp/infracost.json
+      #     behavior: update
+
   terraform-apply:
     name: Terraform Apply
     runs-on: ubuntu-latest
@@ -72,76 +93,12 @@ jobs:
           aws_region: ${{ vars.TF_VAR_aws_region }}
 
       - name: Post-Deployment Validation
-        env:
-          EXPECTED_ORG_ID: ${{ vars.TF_VAR_organization_id }}
-          EXPECTED_DEV_OU: ${{ vars.TF_VAR_dev_ou_id }}
-        run: |
-          echo "🔍 Validating deployment..."
-
-          # Get Terraform outputs
-          cd terraform/scps
-          DEV_SCP_ID=$(terraform output -raw dev_scp_id 2>/dev/null || echo "")
-          ORG_ID=$(terraform output -raw organization_id 2>/dev/null || echo "")
-
-          # Validate Organization
-          echo "Checking organization..."
-          if [ -z "$ORG_ID" ]; then
-            echo "❌ Could not get organization ID from Terraform output"
-            exit 1
-          fi
-          if [ "$ORG_ID" != "$EXPECTED_ORG_ID" ]; then
-            echo "❌ Organization ID mismatch"
-            exit 1
-          fi
-          echo "✅ Organization verified: ${ORG_ID}"
-
-          # Validate SCPs enabled
-          echo "Checking SCP policy type..."
-          SCP_ENABLED=$(aws organizations list-roots --query "Roots[0].PolicyTypes[?Type==\`SERVICE_CONTROL_POLICY\`].Status" --output text)
-          if [ "$SCP_ENABLED" != "ENABLED" ]; then
-            echo "❌ SCPs not enabled"
-            exit 1
-          fi
-          echo "✅ SCPs enabled"
-
-          # Validate Dev SCP exists
-          echo "Checking Dev SCP policy..."
-          if [ -z "$DEV_SCP_ID" ]; then
-            echo "❌ Could not get Dev SCP ID from Terraform output"
-            exit 1
-          fi
-          SCP_EXISTS=$(aws organizations describe-policy --policy-id "$DEV_SCP_ID" --query 'Policy.PolicySummary.Id' --output text 2>/dev/null || echo "")
-          if [ -z "$SCP_EXISTS" ]; then
-            echo "❌ Dev SCP policy not found in AWS"
-            exit 1
-          fi
-          echo "✅ Dev SCP policy exists: ${DEV_SCP_ID}"
-
-          # Validate SCP attached to Dev OU
-          echo "Checking SCP attachment..."
-          ATTACHED=$(aws organizations list-policies-for-target --target-id "$EXPECTED_DEV_OU" --filter SERVICE_CONTROL_POLICY --query "Policies[?Id==\`${DEV_SCP_ID}\`].Id" --output text)
-          if [ -z "$ATTACHED" ]; then
-            echo "❌ Dev SCP not attached to Dev OU"
-            exit 1
-          fi
-          echo "✅ Dev SCP attached to Dev OU"
-
-          # Validate SCP content (check for key restrictions)
-          echo "Validating SCP content..."
-          POLICY_CONTENT=$(aws organizations describe-policy --policy-id "${DEV_SCP_ID}" --query 'Policy.Content' --output text)
-          if ! echo "$POLICY_CONTENT" | grep -q "us-east-1"; then
-            echo "❌ Region restriction not found in policy"
-            exit 1
-          fi
-          echo "✅ SCP content validated (region restriction present)"
-
-          echo ""
-          echo "✅ All validations passed!"
-          echo "📊 Deployment Summary:"
-          echo "  - Organization: ${ORG_ID}"
-          echo "  - Dev OU: ${EXPECTED_DEV_OU}"
-          echo "  - Dev SCP: ${DEV_SCP_ID}"
-          echo "  - Status: Deployed and validated"
+        uses: ./.github/actions/post-deploy-validation-composite
+        with:
+          working_directory: terraform/scps
+          aws_region: ${{ vars.TF_VAR_aws_region }}
+          expected_org_id: ${{ vars.TF_VAR_organization_id }}
+          expected_dev_ou: ${{ vars.TF_VAR_dev_ou_id }}
 
   terraform-destroy:
     name: Terraform Destroy

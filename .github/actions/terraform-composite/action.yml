@@ -53,35 +53,42 @@ runs:
 
     - name: Terraform Plan
       if: inputs.terraform_command == 'plan'
+      id: plan
       shell: bash
       working-directory: ${{ inputs.working_directory }}
       run: |
-        terraform plan -out=tfplan | tee plan.txt
+        set +e
+        terraform plan -detailed-exitcode -out=tfplan | tee plan.txt
+        EXIT_CODE=$?
+        set -e
+
+        echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+
         echo "## Terraform Plan Summary" >> $GITHUB_STEP_SUMMARY
         echo '```terraform' >> $GITHUB_STEP_SUMMARY
         grep -A 100 "Terraform will perform" plan.txt >> $GITHUB_STEP_SUMMARY || echo "No changes detected" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
 
+        # Exit codes: 0 = no changes, 1 = error, 2 = changes detected
+        if [ $EXIT_CODE -eq 1 ]; then
+          exit 1
+        fi
+
     - name: Upload Plan Artifact
       if: inputs.terraform_command == 'plan'
       uses: actions/upload-artifact@v4
       with:
-        name: tfplan
-        path: ${{ inputs.working_directory }}/tfplan
+        name: terraform-plan
+        path: |
+          ${{ inputs.working_directory }}/tfplan
+          ${{ inputs.working_directory }}/plan.txt
         retention-days: 1
 
     - name: Download Plan Artifact
       if: inputs.terraform_command == 'apply'
       uses: actions/download-artifact@v4
       with:
-        name: tfplan
-        path: ${{ inputs.working_directory }}
-
-    - name: Download Plan Artifact
-      if: inputs.terraform_command == 'apply'
-      uses: actions/download-artifact@v4
-      with:
-        name: tfplan
+        name: terraform-plan
         path: ${{ inputs.working_directory }}
 
     - name: Terraform Apply
