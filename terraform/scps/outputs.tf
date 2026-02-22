@@ -1,6 +1,6 @@
 output "organization_id" {
   description = "AWS Organization ID"
-  value       = aws_organizations_organization.org.id
+  value       = data.aws_organizations_organization.org.id
 }
 
 output "dev_scp_id" {
