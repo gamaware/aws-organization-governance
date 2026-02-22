@@ -1,15 +1,9 @@
-# Manage existing AWS Organization and enable SCPs
-resource "aws_organizations_organization" "org" {
-  feature_set = "ALL"
-
-  enabled_policy_types = [
-    "SERVICE_CONTROL_POLICY"
-  ]
-}
+# Reference existing AWS Organization (read-only)
+# Prerequisite: Enable SCPs first (see docs/prerequisites.md)
+data "aws_organizations_organization" "org" {}
 
 # Dev OU Service Control Policy
 resource "aws_organizations_policy" "dev_scp" {
-  depends_on  = [aws_organizations_organization.org]
   name        = "DevEnvironmentRestrictions"
   description = "Cost controls and security guardrails for Dev OU"
   type        = "SERVICE_CONTROL_POLICY"
