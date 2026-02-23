@@ -101,7 +101,8 @@ aws iam put-role-policy \
           "organizations:ListTargetsForPolicy",
           "organizations:DescribeOrganization",
           "organizations:ListRoots",
-          "organizations:ListAccounts"
+          "organizations:ListAccounts",
+          "organizations:ListAWSServiceAccessForOrganization"
         ],
         "Resource": "*"
       },
