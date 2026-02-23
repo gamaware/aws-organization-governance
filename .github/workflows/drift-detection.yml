@@ -15,6 +15,9 @@ jobs:
   detect-drift:
     name: Detect Configuration Drift
     runs-on: ubuntu-latest
+    env:
+      TF_VAR_dev_ou_id: ${{ vars.TF_VAR_dev_ou_id }}
+      TF_VAR_aws_region: ${{ vars.TF_VAR_aws_region }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -24,9 +27,5 @@ jobs:
         with:
           working_directory: terraform/scps
           aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
-          aws_region: us-east-1
+          aws_region: ${{ vars.TF_VAR_aws_region }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-        env:
-          TF_VAR_organization_id: ${{ vars.TF_VAR_organization_id }}
-          TF_VAR_dev_ou_id: ${{ vars.TF_VAR_dev_ou_id }}
-          TF_VAR_aws_region: ${{ vars.TF_VAR_aws_region }}

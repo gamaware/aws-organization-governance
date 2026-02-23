@@ -15,14 +15,18 @@ The following variables must be configured for the CI/CD pipeline:
 
 | Variable Name | Description | Example |
 | --------------- | ----------- | ------- |
-| `TF_VAR_organization_id` | AWS Organization ID | `o-xxxxxxxxxx` |
+| `EXPECTED_ORG_ID` | AWS Organization ID (for validation) | `o-xxxxxxxxxx` |
 | `TF_VAR_dev_ou_id` | Development OU ID | `ou-xxxx-xxxxxxxx` |
 | `TF_VAR_aws_region` | AWS Region | `us-east-1` |
+
+> `TF_VAR_` prefixed variables are passed to Terraform as input variables.
+> `EXPECTED_ORG_ID` is used only by post-deploy validation (not a Terraform
+> variable — the org ID comes from a data source).
 
 ## Setup via GitHub CLI
 
 ```bash
-gh variable set TF_VAR_organization_id --body "<ORGANIZATION_ID>"
+gh variable set EXPECTED_ORG_ID --body "<ORGANIZATION_ID>"
 gh variable set TF_VAR_dev_ou_id --body "<DEV_OU_ID>"
 gh variable set TF_VAR_aws_region --body "<AWS_REGION>"
 ```
@@ -36,16 +40,16 @@ gh variable list
 Expected output:
 
 ```text
-TF_VAR_organization_id  <ORGANIZATION_ID>
-TF_VAR_dev_ou_id        <DEV_OU_ID>
-TF_VAR_aws_region       <AWS_REGION>
+EXPECTED_ORG_ID   <ORGANIZATION_ID>
+TF_VAR_dev_ou_id  <DEV_OU_ID>
+TF_VAR_aws_region <AWS_REGION>
 ```
 
 ## Setup via GitHub UI
 
-1. Go to: `https://github.com/<GITHUB_ORG>/<REPO_NAME>/settings/variables/actions`
+1. Navigate to repository Settings → Variables → Actions
 2. Click "New repository variable" for each variable:
-   - **Name:** `TF_VAR_organization_id`
+   - **Name:** `EXPECTED_ORG_ID`
      **Value:** `<ORGANIZATION_ID>`
    - **Name:** `TF_VAR_dev_ou_id`
      **Value:** `<DEV_OU_ID>`
@@ -57,7 +61,8 @@ TF_VAR_aws_region       <AWS_REGION>
 ### Organization ID
 
 ```bash
-aws organizations describe-organization --query 'Organization.Id' --output text
+aws organizations describe-organization \
+  --query 'Organization.Id' --output text
 ```
 
 ### Development OU ID
@@ -75,18 +80,11 @@ Use your preferred region (e.g., `us-east-1`, `us-west-2`, `eu-west-1`)
 
 ## Updating Variables
 
-To update a variable:
-
 ```bash
-gh variable set TF_VAR_organization_id --body "<NEW_VALUE>"
+gh variable set EXPECTED_ORG_ID --body "<NEW_VALUE>"
 ```
 
-Or via GitHub UI:
-
-1. Go to repository settings → Variables
-2. Click on the variable name
-3. Update the value
-4. Click "Update variable"
+Or via GitHub UI: repository Settings → Variables → click variable → update.
 
 ## Troubleshooting
 
@@ -103,5 +101,5 @@ Or via GitHub UI:
 
 ## References
 
-- [GitHub Variables Documentation](https://docs.github.com/en/actions/learn-github-actions/variables)
+- [GitHub Variables](https://docs.github.com/en/actions/learn-github-actions/variables)
 - [Terraform Environment Variables](https://developer.hashicorp.com/terraform/cli/config/environment-variables)

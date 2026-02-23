@@ -23,6 +23,14 @@ repos:
         args: ['--baseline', '.secrets.baseline']
         exclude: package-lock.json
 
+  - repo: local
+    hooks:
+      - id: gitleaks
+        name: gitleaks
+        entry: gitleaks git --pre-commit --redact --no-banner
+        language: system
+        pass_filenames: false
+
   - repo: https://github.com/antonbabenko/pre-commit-terraform
     rev: v1.105.0
     hooks:
@@ -30,10 +38,12 @@ repos:
       - id: terraform_validate
       - id: terraform_tflint
       - id: terrascan
+        files: \.tf$
         args:
           - --args=--non-recursive
           - --args=--policy-type=aws
           - --args=--iac-version=v15
+          - --args=-d terraform/scps
 
   - repo: local
     hooks:
