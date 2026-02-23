@@ -1,4 +1,6 @@
 name: Terraform PR Checks
+run-name: >-
+  Terraform PR checks (PR #${{ github.event.pull_request.number }})
 
 on:
   pull_request:
@@ -6,6 +8,8 @@ on:
     paths:
       - 'terraform/**'
       - '.github/workflows/terraform-pr.yml'
+      - '.github/actions/lint-and-security-composite/**'
+      - '.github/actions/terraform-composite/**'
 
 permissions:
   id-token: write
@@ -20,39 +24,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+      - name: Run Lint and Security
+        uses: ./.github/actions/lint-and-security-composite
         with:
-          terraform_version: 1.14.5
-
-      - name: Terraform Format Check
-        run: terraform fmt -check -recursive
-        working-directory: terraform
-
-      - name: TFLint Setup
-        uses: terraform-linters/setup-tflint@v6
-        with:
-          tflint_version: latest
-
-      - name: Run TFLint
-        run: |
-          tflint --init
-          tflint --recursive
-        working-directory: terraform
-
-      - name: Checkov Security Scan
-        uses: bridgecrewio/checkov-action@v12
-        with:
-          directory: terraform
-          framework: terraform
-          soft_fail: false
+          working_directory: terraform/scps
 
   terraform-plan:
     name: Terraform Plan
     runs-on: ubuntu-latest
     needs: lint-and-security
     env:
-      TF_VAR_organization_id: ${{ vars.TF_VAR_organization_id }}
       TF_VAR_dev_ou_id: ${{ vars.TF_VAR_dev_ou_id }}
       TF_VAR_aws_region: ${{ vars.TF_VAR_aws_region }}
     steps:
