@@ -2,8 +2,8 @@ name: Update Pre-commit Hooks
 
 on:
   schedule:
-    - cron: '0 0 * * 0'  # Weekly on Sunday at midnight UTC
-  workflow_dispatch:  # Manual trigger
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -17,26 +17,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - name: Update Hooks
+        uses: ./.github/actions/update-pre-commit-composite
         with:
-          python-version: '3.x'
-
-      - name: Install pre-commit
-        run: pip install pre-commit
-
-      - name: Update hooks
-        run: pre-commit autoupdate
-
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v8
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: 'chore: update pre-commit hooks'
-          title: 'Update pre-commit hook versions'
-          body: |
-            Automated update of pre-commit hook versions.
-
-            Please review the changes and merge if tests pass.
-          branch: update-pre-commit-hooks
-          delete-branch: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
