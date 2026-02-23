@@ -1,4 +1,10 @@
 name: Terraform CI/CD
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch'
+    && format('Terraform {0}', inputs.action)
+    || github.event_name == 'push'
+    && format('Terraform plan (push: {0})', github.event.head_commit.message)
+    || format('Terraform plan (PR #{0})', github.event.pull_request.number) }}
 
 on:
   pull_request:
