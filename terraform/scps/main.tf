@@ -106,3 +106,33 @@ resource "aws_organizations_policy_attachment" "dev_scp_attachment" {
   policy_id = aws_organizations_policy.dev_scp.id
   target_id = var.dev_ou_id
 }
+
+# Protect SSO trusted access from being disabled
+# Applied to root to protect the entire organization
+resource "aws_organizations_policy" "protect_sso" {
+  name        = "ProtectSSOTrustedAccess"
+  description = "Prevent disabling IAM Identity Center trusted access"
+  type        = "SERVICE_CONTROL_POLICY"
+
+  content = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "DenyDisableSSO"
+        Effect   = "Deny"
+        Action   = "organizations:DisableAWSServiceAccess"
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "organizations:ServicePrincipal" = "sso.amazonaws.com"
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_organizations_policy_attachment" "protect_sso_root" {
+  policy_id = aws_organizations_policy.protect_sso.id
+  target_id = data.aws_organizations_organization.org.roots[0].id
+}
