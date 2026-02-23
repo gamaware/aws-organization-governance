@@ -1,0 +1,16 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyDisableSSO",
+      "Effect": "Deny",
+      "Action": "organizations:DisableAWSServiceAccess",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "organizations:ServicePrincipal": "sso.amazonaws.com"
+        }
+      }
+    }
+  ]
+}

@@ -3,7 +3,8 @@ set -euo pipefail
 
 # Post-deployment validation via AWS CLI
 # Required env vars: ORG_ID, EXPECTED_ORG_ID, ROOT_ID, EXPECTED_DEV_OU,
-#                    DEV_SCP_ID, DEV_SCP_ARN, SSO_SCP_ID, SSO_SCP_ARN
+#                    DEV_SCP_ID, DEV_SCP_ARN, SSO_SCP_ID, SSO_SCP_ARN,
+#                    DEV_TAGGING_SCP_ID, DEV_TAGGING_SCP_ARN
 
 fail() { echo "❌ $1"; exit 1; }
 pass() { echo "✅ $1"; }
@@ -82,6 +83,36 @@ echo "$SSO_CONTENT" | grep -q "sso.amazonaws.com" \
   || fail "SSO service principal condition not found"
 pass "SSO service principal condition validated"
 
+# --- Dev Tagging and Abuse Prevention SCP ---
+[ "$DEV_TAGGING_SCP_ID" = "" ] && fail "Could not get Tagging SCP ID"
+
+TAGGING_EXISTS=$(aws organizations describe-policy \
+  --policy-id "$DEV_TAGGING_SCP_ID" \
+  --query 'Policy.PolicySummary.Id' \
+  --output text 2>/dev/null || echo "")
+[ "$TAGGING_EXISTS" = "" ] && fail "Tagging SCP not found in AWS"
+pass "Tagging SCP exists: ${DEV_TAGGING_SCP_ID}"
+
+TAGGING_ATTACHED=$(aws organizations list-policies-for-target \
+  --target-id "$EXPECTED_DEV_OU" \
+  --filter SERVICE_CONTROL_POLICY \
+  --query "Policies[?Id==\`${DEV_TAGGING_SCP_ID}\`].Id" \
+  --output text)
+[ "$TAGGING_ATTACHED" = "" ] && fail "Tagging SCP not attached to Dev OU"
+pass "Tagging SCP attached to Dev OU"
+
+TAGGING_CONTENT=$(aws organizations describe-policy \
+  --policy-id "$DEV_TAGGING_SCP_ID" \
+  --query 'Policy.Content' \
+  --output text)
+
+echo "$TAGGING_CONTENT" | grep -q "aws:RequestTag/Team" \
+  || fail "Team tag enforcement not found"
+pass "Team tag enforcement validated"
+echo "$TAGGING_CONTENT" | grep -q "iteso.mx" \
+  || fail "ITESO email tag enforcement not found"
+pass "ITESO email tag enforcement validated"
+
 echo ""
 echo "✅ All validations passed!"
 echo "📊 Deployment Summary:"
@@ -89,5 +120,6 @@ echo "  - Organization: ${ORG_ID}"
 echo "  - Root: ${ROOT_ID}"
 echo "  - Dev OU: ${EXPECTED_DEV_OU}"
 echo "  - Dev SCP: ${DEV_SCP_ID} (${DEV_SCP_ARN})"
+echo "  - Tagging SCP: ${DEV_TAGGING_SCP_ID} (${DEV_TAGGING_SCP_ARN})"
 echo "  - SSO Protection SCP: ${SSO_SCP_ID} (${SSO_SCP_ARN})"
 echo "  - Status: Deployed and validated"

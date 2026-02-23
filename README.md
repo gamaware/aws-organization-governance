@@ -114,12 +114,10 @@ aws sts get-caller-identity
 
 ### Service Control Policies
 
-- **DevEnvironmentRestrictions** → Dev OU
-  Region lock (us-east-1), instance type limits,
-  block root user, protect CloudTrail
-- **ProtectSSOTrustedAccess** → Org root
-  Prevents disabling IAM Identity Center trusted
-  access
+| SCP | Target | Purpose |
+| --- | --- | --- |
+| DevEnvironmentRestrictions | Dev OU | Region lock (us-east-1), instance type limits, block root user, protect CloudTrail |
+| ProtectSSOTrustedAccess | Org root | Prevents disabling IAM Identity Center trusted access |
 
 ### Terraform Backend
 
@@ -164,15 +162,12 @@ Feature branch → PR → Checks pass → Merge → Auto plan → Manual apply
 
 ### Workflows
 
-- **terraform-cicd.yml** — PR, push to main, manual.
-  Plan/apply/destroy with post-deploy and
-  post-destroy validation.
-- **terraform-pr.yml** — PR.
-  Lint (fmt, tflint), security (checkov), plan.
-- **drift-detection.yml** — Daily 9 AM UTC.
-  Detects config drift, creates GitHub issue.
-- **update-pre-commit-hooks.yml** — Weekly Sunday.
-  Auto-updates hook versions, creates PR.
+| Workflow | Trigger | Purpose |
+| --- | --- | --- |
+| `terraform-cicd.yml` | PR, push to main, manual | Plan/apply/destroy with post-deploy and post-destroy validation |
+| `terraform-pr.yml` | PR | Lint (fmt, tflint), security (checkov), plan |
+| `drift-detection.yml` | Daily 9 AM UTC | Detects config drift, creates GitHub issue |
+| `update-pre-commit-hooks.yml` | Weekly Sunday | Auto-updates hook versions, creates PR |
 
 ### Authentication
 
@@ -186,22 +181,16 @@ See [GitHub OIDC Setup Guide](docs/github-oidc-setup.md).
 
 ### Defense in Depth
 
-- **Pre-commit (local):** 22 hooks — formatting,
-  validation, security, linting
-- **PR checks (CI):** TFLint, Checkov, plan,
-  CodeRabbit AI review
-- **Branch protection:** PR required, status checks
-  must pass, no direct pushes
-- **Deployment gate:** Manual trigger for
-  apply/destroy
-- **Post-deploy validation:** AWS CLI checks — SCPs
-  exist, attached correctly, content verified
-- **Post-destroy validation:** AWS CLI checks — SCPs
-  removed, no orphaned policies
-- **Drift detection:** Daily scheduled plan,
-  auto-creates issue on drift
-- **Automated updates:** Dependabot + pre-commit
-  autoupdate
+| Layer | Mechanism |
+| --- | --- |
+| Pre-commit (local) | 22 hooks — formatting, validation, security, linting |
+| PR checks (CI) | TFLint, Checkov, plan, CodeRabbit AI review |
+| Branch protection | PR required, status checks must pass, no direct pushes |
+| Deployment gate | Manual trigger for apply/destroy |
+| Post-deploy validation | AWS CLI checks — SCPs exist, attached correctly, content verified |
+| Post-destroy validation | AWS CLI checks — SCPs removed, no orphaned policies |
+| Drift detection | Daily scheduled plan, auto-creates issue on drift |
+| Automated updates | Dependabot + pre-commit autoupdate |
 
 ## Quick Links
 

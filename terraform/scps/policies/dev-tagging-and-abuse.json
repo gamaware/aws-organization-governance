@@ -1,0 +1,220 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyEC2WithoutTeamTag",
+      "Effect": "Deny",
+      "Action": "ec2:RunInstances",
+      "Resource": [
+        "arn:aws:ec2:*:*:instance/*",
+        "arn:aws:ec2:*:*:volume/*"
+      ],
+      "Condition": {
+        "Null": {
+          "aws:RequestTag/Team": "true"
+        }
+      }
+    },
+    {
+      "Sid": "DenyEC2WithoutNameTag",
+      "Effect": "Deny",
+      "Action": "ec2:RunInstances",
+      "Resource": [
+        "arn:aws:ec2:*:*:instance/*",
+        "arn:aws:ec2:*:*:volume/*"
+      ],
+      "Condition": {
+        "Null": {
+          "aws:RequestTag/Name": "true"
+        }
+      }
+    },
+    {
+      "Sid": "DenyRDSWithoutTeamTag",
+      "Effect": "Deny",
+      "Action": [
+        "rds:CreateDBInstance",
+        "rds:CreateDBCluster"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "Null": {
+          "aws:RequestTag/Team": "true"
+        }
+      }
+    },
+    {
+      "Sid": "DenyRDSWithoutNameTag",
+      "Effect": "Deny",
+      "Action": [
+        "rds:CreateDBInstance",
+        "rds:CreateDBCluster"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "Null": {
+          "aws:RequestTag/Name": "true"
+        }
+      }
+    },
+    {
+      "Sid": "DenyLambdaWithoutTeamTag",
+      "Effect": "Deny",
+      "Action": "lambda:CreateFunction",
+      "Resource": "*",
+      "Condition": {
+        "Null": {
+          "aws:RequestTag/Team": "true"
+        }
+      }
+    },
+    {
+      "Sid": "DenyLambdaWithoutNameTag",
+      "Effect": "Deny",
+      "Action": "lambda:CreateFunction",
+      "Resource": "*",
+      "Condition": {
+        "Null": {
+          "aws:RequestTag/Name": "true"
+        }
+      }
+    },
+    {
+      "Sid": "DenyS3WithoutTeamTag",
+      "Effect": "Deny",
+      "Action": "s3:CreateBucket",
+      "Resource": "*",
+      "Condition": {
+        "Null": {
+          "aws:RequestTag/Team": "true"
+        }
+      }
+    },
+    {
+      "Sid": "DenyS3WithoutNameTag",
+      "Effect": "Deny",
+      "Action": "s3:CreateBucket",
+      "Resource": "*",
+      "Condition": {
+        "Null": {
+          "aws:RequestTag/Name": "true"
+        }
+      }
+    },
+    {
+      "Sid": "DenyInvalidTeamTag",
+      "Effect": "Deny",
+      "Action": [
+        "ec2:RunInstances",
+        "rds:CreateDBInstance",
+        "rds:CreateDBCluster",
+        "lambda:CreateFunction",
+        "s3:CreateBucket"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringNotEquals": {
+          "aws:RequestTag/Team": [
+            "team-1",
+            "team-2",
+            "team-3",
+            "team-4",
+            "team-5",
+            "team-6",
+            "team-7"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "DenyInvalidNameTag",
+      "Effect": "Deny",
+      "Action": [
+        "ec2:RunInstances",
+        "rds:CreateDBInstance",
+        "rds:CreateDBCluster",
+        "lambda:CreateFunction",
+        "s3:CreateBucket"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringNotLike": {
+          "aws:RequestTag/Name": "*@iteso.mx"
+        }
+      }
+    },
+    {
+      "Sid": "DenyGPUAndMetalInstances",
+      "Effect": "Deny",
+      "Action": [
+        "ec2:RunInstances",
+        "ec2:StartInstances"
+      ],
+      "Resource": "arn:aws:ec2:*:*:instance/*",
+      "Condition": {
+        "StringLike": {
+          "ec2:InstanceType": [
+            "p*",
+            "g*",
+            "inf*",
+            "trn*",
+            "dl*",
+            "*.metal",
+            "*.metal-*"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "DenySageMakerExpensiveInstances",
+      "Effect": "Deny",
+      "Action": [
+        "sagemaker:CreateNotebookInstance",
+        "sagemaker:CreateEndpoint",
+        "sagemaker:CreateTrainingJob"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringNotLike": {
+          "sagemaker:InstanceType": [
+            "ml.t2.*",
+            "ml.t3.*"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "DenyAbusableServices",
+      "Effect": "Deny",
+      "Action": [
+        "lightsail:*",
+        "gamelift:*",
+        "aws-marketplace:Subscribe",
+        "aws-marketplace:AcceptAgreementApprovalRequest"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "DenyLargeEBSVolumes",
+      "Effect": "Deny",
+      "Action": "ec2:CreateVolume",
+      "Resource": "*",
+      "Condition": {
+        "NumericGreaterThan": {
+          "ec2:VolumeSize": "100"
+        }
+      }
+    },
+    {
+      "Sid": "DenyPublicDataExposure",
+      "Effect": "Deny",
+      "Action": [
+        "s3:DeletePublicAccessBlock",
+        "rds:ModifyDBSnapshotAttribute",
+        "rds:ModifyDBClusterSnapshotAttribute",
+        "ec2:ModifySnapshotAttribute"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
