@@ -1,7 +1,6 @@
-# AWS Organization Configuration
+# Terraform Variables
 # Copy this file to terraform.tfvars and fill in your values
 # terraform.tfvars is gitignored and will not be committed
 
-organization_id = "o-xxxxxxxxxx"  # Your AWS Organization ID
-dev_ou_id       = "ou-xxxx-xxxxxxxx"  # Your Dev OU ID
-aws_region      = "us-east-1"  # AWS region for resources
+dev_ou_id  = "ou-xxxx-xxxxxxxx"  # Your Dev OU ID
+aws_region = "us-east-1"         # AWS region for resources
