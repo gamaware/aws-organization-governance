@@ -102,7 +102,10 @@ aws iam put-role-policy \
           "organizations:DescribeOrganization",
           "organizations:ListRoots",
           "organizations:ListAccounts",
-          "organizations:ListAWSServiceAccessForOrganization"
+          "organizations:ListAWSServiceAccessForOrganization",
+          "organizations:ListTagsForResource",
+          "organizations:TagResource",
+          "organizations:UntagResource"
         ],
         "Resource": "*"
       },
