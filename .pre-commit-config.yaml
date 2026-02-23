@@ -30,10 +30,12 @@ repos:
       - id: terraform_validate
       - id: terraform_tflint
       - id: terrascan
+        files: \.tf$
         args:
           - --args=--non-recursive
           - --args=--policy-type=aws
           - --args=--iac-version=v15
+          - --args=-d terraform/scps
 
   - repo: local
     hooks:

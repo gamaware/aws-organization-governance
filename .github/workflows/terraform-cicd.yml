@@ -102,3 +102,9 @@ jobs:
           working_directory: terraform/scps
           aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
           aws_region: ${{ vars.TF_VAR_aws_region }}
+
+      - name: Post-Destroy Validation
+        env:
+          EXPECTED_ORG_ID: ${{ vars.EXPECTED_ORG_ID }}
+          EXPECTED_DEV_OU: ${{ vars.TF_VAR_dev_ou_id }}
+        run: ${{ github.workspace }}/.github/scripts/validate-destroy.sh
