@@ -1,0 +1,23 @@
+language: en-US
+reviews:
+  auto_review:
+    enabled: true
+    drafts: false
+  path_instructions:
+    - path: "terraform/**"
+      instructions: >
+        Review for Terraform best practices, security misconfigurations,
+        and AWS Organizations SCP policy correctness.
+    - path: ".github/workflows/**"
+      instructions: >
+        Review for GitHub Actions security best practices, pinned action
+        versions, and least-privilege permissions.
+    - path: ".github/scripts/**"
+      instructions: >
+        Review for shell scripting best practices, proper error handling,
+        and shellcheck/shellharden compliance.
+  path_filters:
+    - "!**/*.tfvars"
+    - "!**/.terraform.lock.hcl"
+chat:
+  auto_reply: true
