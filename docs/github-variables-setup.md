@@ -14,7 +14,7 @@ GitHub Actions.
 The following variables must be configured for the CI/CD pipeline:
 
 | Variable Name | Description | Example |
-|---------------|-------------|---------|
+| --------------- | ----------- | ------- |
 | `TF_VAR_organization_id` | AWS Organization ID | `o-xxxxxxxxxx` |
 | `TF_VAR_dev_ou_id` | Development OU ID | `ou-xxxx-xxxxxxxx` |
 | `TF_VAR_aws_region` | AWS Region | `us-east-1` |

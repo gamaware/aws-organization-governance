@@ -23,102 +23,17 @@ runs:
       id: outputs
       shell: bash
       working-directory: ${{ inputs.working_directory }}
-      run: |
-        DEV_SCP_ID=$(terraform output -raw dev_scp_id 2>/dev/null || echo "")
-        DEV_SCP_ARN=$(terraform output -raw dev_scp_arn 2>/dev/null || echo "")
-        ORG_ID=$(terraform output -raw organization_id 2>/dev/null || echo "")
-
-        echo "dev_scp_id=$DEV_SCP_ID" >> $GITHUB_OUTPUT
-        echo "dev_scp_arn=$DEV_SCP_ARN" >> $GITHUB_OUTPUT
-        echo "org_id=$ORG_ID" >> $GITHUB_OUTPUT
+      run: ${{ github.workspace }}/.github/scripts/get-terraform-outputs.sh
 
     - name: Validate Deployment
       shell: bash
-      run: |
-        echo "🔍 Validating deployment..."
-
-        # Validate Organization
-        echo "Checking organization..."
-        if [ -z "${{ steps.outputs.outputs.org_id }}" ]; then
-          echo "❌ Could not get organization ID from Terraform output"
-          exit 1
-        fi
-        if [ "${{ steps.outputs.outputs.org_id }}" != "${{ inputs.expected_org_id }}" ]; then
-          echo "❌ Organization ID mismatch"
-          exit 1
-        fi
-        echo "✅ Organization verified: ${{ steps.outputs.outputs.org_id }}"
-
-        # Validate SCPs enabled
-        echo "Checking SCP policy type..."
-        SCP_ENABLED=$(aws organizations list-roots \
-          --query "Roots[0].PolicyTypes[?Type==\`SERVICE_CONTROL_POLICY\`].Status" \
-          --output text)
-        if [ "$SCP_ENABLED" != "ENABLED" ]; then
-          echo "❌ SCPs not enabled"
-          exit 1
-        fi
-        echo "✅ SCPs enabled"
-
-        # Validate Dev SCP exists
-        echo "Checking Dev SCP policy..."
-        if [ -z "${{ steps.outputs.outputs.dev_scp_id }}" ]; then
-          echo "❌ Could not get Dev SCP ID from Terraform output"
-          exit 1
-        fi
-        SCP_EXISTS=$(aws organizations describe-policy \
-          --policy-id "${{ steps.outputs.outputs.dev_scp_id }}" \
-          --query 'Policy.PolicySummary.Id' \
-          --output text 2>/dev/null || echo "")
-        if [ -z "$SCP_EXISTS" ]; then
-          echo "❌ Dev SCP policy not found in AWS"
-          exit 1
-        fi
-        echo "✅ Dev SCP policy exists: ${{ steps.outputs.outputs.dev_scp_id }}"
-
-        # Validate SCP attached to Dev OU
-        echo "Checking SCP attachment..."
-        ATTACHED=$(aws organizations list-policies-for-target \
-          --target-id "${{ inputs.expected_dev_ou }}" \
-          --filter SERVICE_CONTROL_POLICY \
-          --query "Policies[?Id==\`${{ steps.outputs.outputs.dev_scp_id }}\`].Id" \
-          --output text)
-        if [ -z "$ATTACHED" ]; then
-          echo "❌ Dev SCP not attached to Dev OU"
-          exit 1
-        fi
-        echo "✅ Dev SCP attached to Dev OU"
-
-        # Validate SCP content
-        echo "Validating SCP content..."
-        POLICY_CONTENT=$(aws organizations describe-policy \
-          --policy-id "${{ steps.outputs.outputs.dev_scp_id }}" \
-          --query 'Policy.Content' \
-          --output text)
-
-        if ! echo "$POLICY_CONTENT" | grep -q "us-east-1"; then
-          echo "❌ Region restriction not found"
-          exit 1
-        fi
-        echo "✅ Region restriction validated"
-
-        if ! echo "$POLICY_CONTENT" | grep -q "ec2:InstanceType"; then
-          echo "❌ Instance type restriction not found"
-          exit 1
-        fi
-        echo "✅ Instance type restriction validated"
-
-        if ! echo "$POLICY_CONTENT" | grep -q "aws:PrincipalArn"; then
-          echo "❌ Root user restriction not found"
-          exit 1
-        fi
-        echo "✅ Root user restriction validated"
-
-        echo ""
-        echo "✅ All validations passed!"
-        echo "📊 Deployment Summary:"
-        echo "  - Organization: ${{ steps.outputs.outputs.org_id }}"
-        echo "  - Dev OU: ${{ inputs.expected_dev_ou }}"
-        echo "  - Dev SCP ID: ${{ steps.outputs.outputs.dev_scp_id }}"
-        echo "  - Dev SCP ARN: ${{ steps.outputs.outputs.dev_scp_arn }}"
-        echo "  - Status: Deployed and validated"
+      env:
+        ORG_ID: ${{ steps.outputs.outputs.org_id }}
+        EXPECTED_ORG_ID: ${{ inputs.expected_org_id }}
+        ROOT_ID: ${{ steps.outputs.outputs.root_id }}
+        EXPECTED_DEV_OU: ${{ inputs.expected_dev_ou }}
+        DEV_SCP_ID: ${{ steps.outputs.outputs.dev_scp_id }}
+        DEV_SCP_ARN: ${{ steps.outputs.outputs.dev_scp_arn }}
+        SSO_SCP_ID: ${{ steps.outputs.outputs.sso_scp_id }}
+        SSO_SCP_ARN: ${{ steps.outputs.outputs.sso_scp_arn }}
+      run: ${{ github.workspace }}/.github/scripts/validate-deployment.sh
