@@ -123,7 +123,7 @@ aws sts get-caller-identity
 
 ### Terraform Backend
 
-- **Bucket:** S3 with native locking (Terraform 1.14+, no DynamoDB)
+- **Bucket:** S3 with native locking (Terraform 1.10+, no DynamoDB)
 - **Encryption:** AES256
 - **Versioning:** Enabled
 

@@ -159,7 +159,7 @@ terraform {
 **Why S3 native locking?**
 
 - No DynamoDB table required (simpler infrastructure)
-- Built-in to Terraform 1.14+
+- Built-in to Terraform 1.10+
 - Automatic cleanup of stale locks
 - Lower cost
 
