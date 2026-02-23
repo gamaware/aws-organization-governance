@@ -3,67 +3,85 @@
 ## Organization Structure
 
 ```text
-Organization (o-3ffm2cc86k)
-├─ Management Account: General (557690606827)
-│  └─ Alias: alex-garcia-general
+Organization
+├─ Management Account (General)
 │
 └─ Root
-   ├─ OU: Dev (ou-srmc-f52jl8so)
-   │  └─ Dev Account (311141527383)
-   │     └─ Alias: alex-garcia-dev
+   ├─ OU: Dev
+   │  └─ Dev Account
    │
-   ├─ OU: DevOps (ou-srmc-yio2u8xw)
-   │  └─ DevOps Account (626635444569)
-   │     └─ Alias: alex-garcia-devops
+   ├─ OU: DevOps
+   │  └─ DevOps Account
    │
-   ├─ OU: Prod (ou-srmc-ht4bzwfc)
-   │  └─ Prod Account (571600856221)
-   │     └─ Alias: alex-garcia-prod
+   ├─ OU: Prod
+   │  └─ Prod Account
    │
-   └─ OU: QA (ou-srmc-3swc55qp)
-      └─ QA Account (222634394903)
-         └─ Alias: alex-garcia-qa
+   └─ OU: QA
+      └─ QA Account
 ```
 
 ## Service Control Policies (SCPs)
 
-### Dev OU SCP
+### DevEnvironmentRestrictions
 
-Applied to: Dev OU (ou-srmc-f52jl8so)
+Applied to: Dev OU
 
 **Guardrails:**
 
 - Restrict to us-east-1 region only
-- Allow only cost-effective EC2 instances (t2, t3, t3a, t4g
-  families)
-- Allow only cost-effective RDS instances (db.t2, db.t3, db.t4g
-  families)
+- Allow only cost-effective EC2 instances (t2, t3, t3a, t4g families)
+- Allow only cost-effective RDS instances (db.t2, db.t3, db.t4g families)
 - Prevent leaving organization
 - Block root user actions
 - Prevent CloudTrail deletion/modification
 - Block Reserved Instance purchases
 
-**Purpose:** Enable developers to experiment and build while
-maintaining cost controls and security guardrails.
+**Purpose:** Enable developers to experiment while maintaining cost
+controls and security guardrails.
+
+### ProtectSSOTrustedAccess
+
+Applied to: Organization root
+
+**Guardrails:**
+
+- Deny `organizations:DisableAWSServiceAccess` for
+  `sso.amazonaws.com`
+- Deny `organizations:DeregisterDelegatedAdministrator` for
+  `sso.amazonaws.com`
+
+**Purpose:** Prevent accidental or malicious disabling of IAM Identity
+Center (SSO) trusted access, which would break SSO for all accounts.
 
 ## IAM Strategy
+
+### GitHub Actions Role
+
+**Role:** `GitHubActions-OrganizationGovernance`
+
+**Authentication:** OIDC (no long-lived credentials)
+
+**Inline policies:**
+
+- `SCPManagement` — scoped Organizations access (create, update, delete,
+  attach, detach SCPs + describe/list + tag operations) with explicit deny
+  on dangerous actions (DisableAWSServiceAccess, DeleteOrganization, etc.)
+- `TerraformStateAccess` — S3 bucket read/write for Terraform state
 
 ### Dev Account
 
 **Group:** Developers
 **Policy:** PowerUserAccess + Limited IAM permissions
-**Members:** 7 developers
 
 **Permissions:**
 
 - Full access to AWS services (Lambda, S3, EC2, RDS, etc.)
 - Can create IAM roles for applications
-- Can pass roles to services
 - Cannot modify users, groups, or their own permissions
 
 **Guardrails (via SCP):**
 
-- Even with PowerUser access, cannot violate SCP restrictions
+- Cannot violate SCP restrictions even with PowerUser access
 - Cannot launch expensive resources
 - Cannot use regions outside us-east-1
 - Cannot disable audit logging
@@ -73,21 +91,67 @@ maintaining cost controls and security guardrails.
 ### Infrastructure as Code
 
 - **Tool:** Terraform 1.14.5
-- **Provider:** AWS ~> 6.0 (latest: 6.33.0)
+- **Provider:** AWS ~> 6.0
 - **Backend:** S3 with native locking (no DynamoDB)
-- **Version Control:** GitHub
-- **CI/CD:** GitHub Actions
+- **Linting:** TFLint with terraform + AWS rulesets (preset=all)
+- **Security:** Checkov, terrascan, detect-secrets, gitleaks
+- **CI/CD:** GitHub Actions with composite actions
+- **Code Review:** CodeRabbit AI
+
+### CI/CD Workflow
+
+```mermaid
+graph TB
+    subgraph "Local Development"
+        A[Feature Branch] --> B[Make Changes]
+        B --> C[Pre-commit Hooks - 22 checks]
+        C --> D[Push Branch]
+    end
+
+    subgraph "Pull Request"
+        D --> E[Create PR]
+        E --> F1[Lint: fmt + tflint]
+        E --> F2[Security: Checkov]
+        E --> F3[Plan Preview]
+        E --> F4[CodeRabbit AI Review]
+        F1 & F2 & F3 & F4 --> G{Checks Pass?}
+        G -->|No| H[Fix Issues]
+        H --> B
+        G -->|Yes| I[Review & Approve]
+    end
+
+    subgraph "Main Branch"
+        I --> J[Merge to Main]
+        J --> K[Auto Plan]
+    end
+
+    subgraph "Deployment"
+        K --> L{Manual Trigger}
+        L -->|apply| M[Deploy Changes]
+        M --> N[Post-Deploy Validation]
+        N --> O[Infrastructure Updated]
+        L -->|destroy| P[Destroy Resources]
+        P --> Q[Post-Destroy Validation]
+        Q --> R[Resources Removed]
+    end
+
+    subgraph "Continuous Monitoring"
+        S[Daily: Drift Detection] -->|Drift found| T[Create GitHub Issue]
+        U[Weekly: Dependabot] --> E
+        V[Weekly: Pre-commit Update] --> E
+    end
+```
 
 ### Terraform Backend Configuration
 
 ```hcl
 terraform {
   backend "s3" {
-    bucket       = "terraform-state-aws-org-governance-557690606827"
+    bucket       = "<BUCKET_NAME>"
     key          = "scps/terraform.tfstate"
     region       = "us-east-1"
     encrypt      = true
-    use_lockfile = true  # S3 native locking (Terraform 1.14+)
+    use_lockfile = true
   }
 }
 ```
@@ -97,143 +161,53 @@ terraform {
 - No DynamoDB table required (simpler infrastructure)
 - Built-in to Terraform 1.14+
 - Automatic cleanup of stale locks
-- Lower cost (no DynamoDB charges)
-
-### CI/CD Workflow
-
-```mermaid
-graph TB
-    subgraph "Local Development"
-        A[Feature Branch] --> B[Make Changes]
-        B --> C[Pre-commit Hooks]
-        C --> D[Push Branch]
-    end
-
-    subgraph "Pull Request"
-        D --> E[Create PR]
-        E --> F[PR Workflow]
-        F --> G[Lint: fmt + tflint]
-        G --> H[Security: Checkov]
-        H --> I[Plan Preview]
-        I --> J{Checks Pass?}
-        J -->|No| K[Fix Issues]
-        K --> B
-        J -->|Yes| L[Review & Approve]
-    end
-
-    subgraph "Main Branch"
-        L --> M[Merge to Main]
-        M --> N[Auto Plan]
-        N --> O[Review Plan Output]
-    end
-
-    subgraph "Deployment"
-        O --> P{Manual Trigger}
-        P -->|plan| Q[Run Plan]
-        P -->|apply| R[Deploy Changes]
-        P -->|destroy| S[Destroy Resources]
-        Q --> O
-        R --> T[Infrastructure Updated]
-        S --> U[Resources Removed]
-    end
-
-    subgraph "Automated Updates"
-        V[Weekly: Dependabot] --> W[Update Dependencies]
-        X[Weekly: Pre-commit] --> Y[Update Hooks]
-        W --> E
-        Y --> E
-    end
-```
-
-**Development Flow:**
-
-1. **Local:** Create feature branch, make changes, pre-commit hooks validate
-2. **PR:** Push branch, create PR, automated checks run (lint, security, plan)
-3. **Review:** Approve PR after checks pass
-4. **Merge:** Merge to main, plan runs automatically
-5. **Deploy:** Review plan, manually trigger apply via workflow_dispatch
-
-**Deployment Options:**
-
-- **plan:** Generate and review execution plan
-- **apply:** Deploy infrastructure changes
-- **destroy:** Remove managed resources
-
-**Automated Maintenance:**
-
-- **Dependabot:** Weekly updates for GitHub Actions and Terraform providers
-- **Pre-commit Autoupdate:** Weekly updates for hook versions
+- Lower cost
 
 ## Security Controls
 
-### Defense in Depth Layers
+### Defense in Depth
 
-#### 1. Pre-commit Hooks (Local)
+#### 1. Pre-commit Hooks (Local — 22 hooks)
 
-- Terraform fmt & validate
-- Secret detection (detect-secrets)
-- Private key detection
-- YAML validation
-- Markdown linting (markdownlint)
-- GitHub Actions validation (actionlint)
-- Blocks commits with issues
+- Terraform fmt, validate, tflint, terrascan
+- Secret detection: detect-secrets, detect-private-key, gitleaks
+- Shell linting: shellcheck, shellharden
+- Hygiene: YAML/JSON validation, merge conflict detection, symlink checks
+- Workflow: actionlint, no-commit-to-branch, conventional commits
 
-#### 2. GitHub Actions (CI)
+#### 2. PR Checks (CI)
 
-**PR Workflow (`terraform-pr.yml`):**
-
-- TFLint (Terraform best practices)
-- Checkov (security & compliance)
+- Lint and security composite: terraform fmt, tflint, checkov
 - Terraform plan preview
-- Runs on every PR
-
-**CI/CD Workflow (`terraform-cicd.yml`):**
-
-- Unified workflow for plan/apply/destroy
-- Auto-runs plan on push to main
-- Manual trigger with action dropdown
-- Artifact sharing between jobs
-- Plan summary in GitHub UI
-- Color output enabled
+- CodeRabbit AI-powered code review
 
 #### 3. Branch Protection
 
 - Requires PR approval
 - Status checks must pass
 - No direct commits to main
-- No force pushes
 
-#### 4. Manual Deployment Gate
+#### 4. Deployment Gate
 
-- Human review required
-- Explicit workflow trigger via workflow_dispatch
-- Three actions: plan, apply, destroy
+- Manual trigger for apply/destroy
 - Plan review before apply
 
-#### 5. Automated Updates
+#### 5. Post-Deployment Validation
 
-**Dependabot (`dependabot.yml`):**
+- AWS CLI verification after apply: SCPs exist, attached to correct
+  targets, policy content matches expectations
+- AWS CLI verification after destroy: no orphaned SCPs remain
 
-- Weekly updates for GitHub Actions
-- Weekly updates for Terraform providers
-- Auto-creates PRs
+#### 6. Drift Detection
 
-**Pre-commit Autoupdate (`update-pre-commit-hooks.yml`):**
+- Daily scheduled Terraform plan
+- Auto-creates GitHub issue if drift detected
 
-- Weekly updates for pre-commit hooks
-- Auto-creates PRs with updated versions
+#### 7. Automated Updates
 
-### Authentication
-
-**GitHub Actions OIDC:**
-
-- No long-lived credentials stored
-- Temporary tokens via AWS STS
-- Repository-scoped trust policy
-- Role: `GitHubActions-OrganizationGovernance`
-- Permissions: AWSOrganizationsFullAccess + S3 state access
-
-See [GitHub OIDC Setup Guide](github-oidc-setup.md) for configuration details.
+- Dependabot: weekly updates for GitHub Actions + Terraform providers
+- Pre-commit autoupdate: weekly hook version updates
+- Both auto-create PRs for review
 
 ### Preventive Controls (SCPs)
 
@@ -242,13 +216,14 @@ See [GitHub OIDC Setup Guide](github-oidc-setup.md) for configuration details.
 - Root user blocking
 - Organization protection
 - CloudTrail protection
+- SSO trusted access protection
 
 ### Detective Controls
 
 - CloudTrail (cannot be disabled via SCP)
+- Drift detection (daily)
 - AWS Config (recommended)
 - Security Hub (recommended)
-- GitHub Actions audit logs
 
 ### Compliance
 
@@ -257,3 +232,4 @@ See [GitHub OIDC Setup Guide](github-oidc-setup.md) for configuration details.
 - Security scanning on every change
 - Immutable state history (S3 versioning)
 - Weekly dependency updates
+- AI-assisted code review on every PR

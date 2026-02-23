@@ -4,329 +4,223 @@
 ![Terraform](https://img.shields.io/badge/Terraform-%235835CC.svg?style=for-the-badge&logo=terraform&logoColor=white)
 ![IaC](https://img.shields.io/badge/IaC-%23326CE5.svg?style=for-the-badge&logoColor=white)
 
-## 🚀 Overview
+## Overview
 
 Infrastructure as Code (IaC) repository for managing AWS Organizations,
 Organizational Units (OUs), Service Control Policies (SCPs), and governance
 controls across multiple AWS accounts.
 
-## 🛠️ Prerequisites
+## Prerequisites
 
-- [tfenv](https://github.com/tfutils/tfenv) - Terraform version manager
+- [tfenv](https://github.com/tfutils/tfenv) — Terraform version manager
 - [AWS CLI](https://aws.amazon.com/cli/) configured with management
   account credentials
 - Python 3.x (for pre-commit hooks)
+- [shellcheck](https://github.com/koalaman/shellcheck),
+  [shellharden](https://github.com/anordal/shellharden),
+  [gitleaks](https://github.com/gitleaks/gitleaks) (for local hooks)
 - Git
 
-## 💻 Local Development Setup
+## Local Development Setup
 
 ### 1. Install Terraform via tfenv
 
 ```bash
-# Install tfenv (macOS)
 brew install tfenv
-
-# Install Terraform 1.14.5
 tfenv install 1.14.5
 tfenv use 1.14.5
-
-# Verify
 terraform version
 ```
 
 ### 2. Setup Pre-commit Hooks
 
 ```bash
-# Create virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
-
-# Install pre-commit
 pip install pre-commit
-
-# Install git hooks
 pre-commit install
-
-# Test hooks
+pre-commit install --hook-type commit-msg
 pre-commit run --all-files
 ```
 
-**Pre-commit checks:**
+**Pre-commit checks (22 hooks):**
 
-- ✅ Terraform fmt (auto-fixes formatting)
-- ✅ Terraform validate (syntax check)
-- ✅ Secret detection (blocks commits with secrets)
-- ✅ YAML validation
-- ✅ Markdown linting (auto-fixes formatting)
-- ✅ GitHub Actions validation (workflow syntax)
-- ✅ Trailing whitespace cleanup
+- **Formatting:** trailing-whitespace, end-of-file-fixer,
+  terraform\_fmt, markdownlint
+- **Validation:** check-yaml, check-json,
+  check-merge-conflict, terraform\_validate
+- **Security:** detect-secrets, detect-private-key, gitleaks
+- **Terraform:** terraform\_tflint, terrascan
+- **Shell:** shellcheck, shellharden
+- **Hygiene:** check-executables-have-shebangs,
+  check-shebang-scripts-are-executable,
+  check-symlinks, check-case-conflict
+- **Workflow:** actionlint, no-commit-to-branch
+- **Commits:** conventional-pre-commit
 
 ### 3. Configure AWS Credentials
 
 ```bash
-# Configure AWS CLI with management account
 aws configure
-
-# Verify access
 aws sts get-caller-identity
 ```
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```text
 .
 ├── .github/
 │   ├── actions/
-│   │   └── terraform-composite/      # Reusable Terraform action
+│   │   ├── terraform-composite/           # Plan/apply/destroy
+│   │   ├── drift-detection-composite/     # Scheduled drift checks
+│   │   ├── post-deploy-validation-composite/  # Post-apply AWS validation
+│   │   ├── lint-and-security-composite/   # PR lint + security scans
+│   │   └── update-pre-commit-composite/   # Weekly hook autoupdate
+│   ├── scripts/
+│   │   ├── terraform-plan.sh              # Plan with markdown summary
+│   │   ├── drift-plan.sh                  # Drift detection plan
+│   │   ├── drift-check.sh                 # Evaluate drift exit code
+│   │   ├── drift-issue.sh                 # Create GitHub issue on drift
+│   │   ├── get-terraform-outputs.sh       # Read Terraform outputs
+│   │   ├── validate-deployment.sh         # Post-apply validation
+│   │   └── validate-destroy.sh            # Post-destroy validation
 │   ├── workflows/
-│   │   ├── terraform-cicd.yml        # Unified CI/CD (plan/apply/destroy)
-│   │   ├── terraform-pr.yml          # PR validation (lint, security, plan)
-│   │   └── update-pre-commit-hooks.yml  # Weekly hook updates
-│   └── dependabot.yml                # Weekly dependency updates
-├── terraform/
-│   └── scps/
-│       ├── backend.tf                # S3 backend with native locking
-│       ├── versions.tf               # Terraform & provider versions
-│       ├── providers.tf              # AWS provider configuration
-│       ├── variables.tf              # Input variables
-│       ├── terraform.tfvars.example  # Variable template
-│       ├── import.tf                 # Organization import block
-│       ├── main.tf                   # Organization + Dev SCP
-│       └── outputs.tf                # Output values
+│   │   ├── terraform-cicd.yml             # Main CI/CD pipeline
+│   │   ├── terraform-pr.yml              # PR checks (lint + security + plan)
+│   │   ├── drift-detection.yml           # Daily drift detection
+│   │   └── update-pre-commit-hooks.yml   # Weekly pre-commit autoupdate
+│   └── dependabot.yml                    # GitHub Actions + Terraform updates
+├── terraform/scps/
+│   ├── backend.tf                         # S3 backend with native locking
+│   ├── versions.tf                        # Terraform & provider versions
+│   ├── providers.tf                       # AWS provider configuration
+│   ├── variables.tf                       # Input variables
+│   ├── terraform.tfvars.example           # Variable template
+│   ├── main.tf                            # Data source + SCPs
+│   └── outputs.tf                         # Output values
 ├── docs/
-│   ├── architecture.md               # Architecture & design decisions
-│   ├── github-oidc-setup.md          # OIDC authentication setup
-│   └── github-variables-setup.md     # GitHub Variables configuration
-├── .pre-commit-config.yaml           # Pre-commit hook configuration
-├── .secrets.baseline                 # Detect-secrets baseline
+│   ├── architecture.md                    # Architecture & design decisions
+│   ├── github-oidc-setup.md              # OIDC authentication setup
+│   ├── github-variables-setup.md         # GitHub Variables configuration
+│   └── prerequisites.md                  # One-time SCP enablement
+├── .coderabbit.yaml                       # CodeRabbit AI review config
+├── .tflint.hcl                            # TFLint configuration
+├── .pre-commit-config.yaml               # Pre-commit hook configuration
+├── .secrets.baseline                      # Detect-secrets baseline
 └── README.md
 ```
 
-## 🏗️ Infrastructure
+## Infrastructure
+
+### Service Control Policies
+
+- **DevEnvironmentRestrictions** → Dev OU
+  Region lock (us-east-1), instance type limits,
+  block root user, protect CloudTrail
+- **ProtectSSOTrustedAccess** → Org root
+  Prevents disabling IAM Identity Center trusted
+  access
 
 ### Terraform Backend
 
-**S3 Bucket:** `terraform-state-aws-org-governance-557690606827`
-
-- Region: us-east-1
-- Versioning: Enabled
-- Encryption: AES256
-- Locking: S3 native (no DynamoDB required)
+- **Bucket:** S3 with native locking (Terraform 1.14+, no DynamoDB)
+- **Encryption:** AES256
+- **Versioning:** Enabled
 
 ### Terraform Versions
 
 - Terraform: 1.14.5
-- AWS Provider: ~> 6.0 (latest: 6.33.0)
+- AWS Provider: ~> 6.0
 
-## 🚀 Getting Started
+## Getting Started
 
-### Initial Setup (One-time)
-
-1. **Clone repository**
-
-   ```bash
-   git clone https://github.com/gamaware/aws-organization-governance.git
-   cd aws-organization-governance
-   ```
-
-2. **Setup development environment** (see Local Development Setup above)
-
-3. **Setup AWS OIDC Authentication**
-
-   Follow the [GitHub OIDC Setup Guide](docs/github-oidc-setup.md) to configure
-   OIDC authentication for GitHub Actions.
-
-4. **Configure GitHub Variables**
-
-   Follow the [GitHub Variables Setup Guide](docs/github-variables-setup.md) to
-   configure required Terraform variables.
-
-5. **Configure Terraform variables locally**
+1. Clone and setup dev environment (see above)
+2. [Enable SCPs](docs/prerequisites.md) (one-time)
+3. [Setup GitHub OIDC](docs/github-oidc-setup.md)
+4. [Configure GitHub Variables](docs/github-variables-setup.md)
+5. Configure local tfvars:
 
    ```bash
    cd terraform/scps
    cp terraform.tfvars.example terraform.tfvars
-   # Edit terraform.tfvars with your values
+   # Edit with your values
    ```
 
-   **Note:** `terraform.tfvars` is gitignored and never committed to the repo.
+6. Initialize: `terraform init`
 
-6. **Initialize Terraform**
+## Development Workflow
 
-   ```bash
-   cd terraform/scps
-   terraform init
-   ```
+```text
+Feature branch → PR → Checks pass → Merge → Auto plan → Manual apply
+```
 
-### Development Workflow
+1. Create feature branch, make changes, commit (pre-commit hooks run)
+2. Push and create PR — automated checks: lint, security scan, plan preview
+3. CodeRabbit provides AI-powered code review
+4. Merge to main — plan runs automatically
+5. Review plan, then manually trigger apply via Actions → Terraform CI/CD
 
-#### Feature Branch → PR → Merge → Deploy
+## CI/CD Pipeline
 
-1. **Create feature branch**
+### Workflows
 
-   ```bash
-   git checkout -b feature/my-change
-   ```
-
-2. **Make changes and commit**
-
-   ```bash
-   # Pre-commit hooks run automatically
-   git add .
-   git commit -m "Add new SCP policy"
-   ```
-
-3. **Push and create PR**
-
-   ```bash
-   git push origin feature/my-change
-   # Create PR on GitHub
-   ```
-
-4. **PR checks run automatically:**
-   - ✅ Linting (terraform fmt, tflint)
-   - ✅ Security scan (Checkov)
-   - ✅ Terraform plan preview
-
-5. **Merge PR** (requires 1 approval + passing checks)
-
-6. **Plan runs automatically** on merge to main
-
-7. **Review plan** in GitHub Actions
-
-8. **Deploy manually:**
-   - Go to Actions → Terraform CI/CD
-   - Click "Run workflow"
-   - Select action: `plan`, `apply`, or `destroy`
-   - Review and confirm
-
-### Deployment Options
-
-**Plan:**
-
-- Generate execution plan
-- Review changes before applying
-- No infrastructure modifications
-
-**Apply:**
-
-- Deploy infrastructure changes
-- Requires plan review first
-- Updates AWS resources
-
-**Destroy:**
-
-- Remove managed resources
-- Use with caution
-- Requires explicit confirmation
-
-### Branch Protection
-
-Main branch is protected:
-
-- ✅ Requires PR with 1 approval
-- ✅ Requires passing status checks
-- ✅ No direct pushes (admins can bypass)
-- ✅ No force pushes or deletions
-
-## 🔄 CI/CD Pipeline
-
-### GitHub Actions Workflows
-
-**terraform-cicd.yml** (Unified CI/CD)
-
-- **On PR:** Runs plan automatically
-- **On push to main:** Runs plan automatically
-- **Manual trigger:** Dropdown with 3 options:
-  - `plan` - Generate execution plan
-  - `apply` - Deploy infrastructure changes
-  - `destroy` - Remove managed resources
-- Plan output displayed in GitHub UI
-- Artifact sharing between plan/apply jobs
-- Color output enabled
-
-**terraform-pr.yml** (PR Validation)
-
-- Terraform fmt check
-- TFLint validation
-- Checkov security scan
-- Terraform plan preview
-
-**update-pre-commit-hooks.yml** (Weekly Maintenance)
-
-- Runs every Sunday
-- Updates pre-commit hook versions
-- Auto-creates PR with changes
-
-**Dependabot** (Weekly Maintenance)
-
-- Updates GitHub Actions versions
-- Updates Terraform provider versions
-- Auto-creates PRs
+- **terraform-cicd.yml** — PR, push to main, manual.
+  Plan/apply/destroy with post-deploy and
+  post-destroy validation.
+- **terraform-pr.yml** — PR.
+  Lint (fmt, tflint), security (checkov), plan.
+- **drift-detection.yml** — Daily 9 AM UTC.
+  Detects config drift, creates GitHub issue.
+- **update-pre-commit-hooks.yml** — Weekly Sunday.
+  Auto-updates hook versions, creates PR.
 
 ### Authentication
 
-**OIDC (OpenID Connect):**
+OIDC — no long-lived credentials. Temporary tokens via AWS STS.
 
-- No long-lived AWS credentials stored in GitHub
-- Temporary credentials via AWS STS AssumeRoleWithWebIdentity
-- Role: `GitHubActions-OrganizationGovernance`
-- Permissions: AWSOrganizationsFullAccess + S3 state access
-- Repository-scoped trust policy
+- **Role:** `GitHubActions-OrganizationGovernance`
+- **Inline policies:** `SCPManagement` (scoped org access with explicit deny
+  on dangerous actions) + `TerraformStateAccess` (S3 bucket)
 
-See [GitHub OIDC Setup Guide](docs/github-oidc-setup.md) for details.
+See [GitHub OIDC Setup Guide](docs/github-oidc-setup.md).
 
 ### Defense in Depth
 
-#### Layer 1: Pre-commit (Local)
+- **Pre-commit (local):** 22 hooks — formatting,
+  validation, security, linting
+- **PR checks (CI):** TFLint, Checkov, plan,
+  CodeRabbit AI review
+- **Branch protection:** PR required, status checks
+  must pass, no direct pushes
+- **Deployment gate:** Manual trigger for
+  apply/destroy
+- **Post-deploy validation:** AWS CLI checks — SCPs
+  exist, attached correctly, content verified
+- **Post-destroy validation:** AWS CLI checks — SCPs
+  removed, no orphaned policies
+- **Drift detection:** Daily scheduled plan,
+  auto-creates issue on drift
+- **Automated updates:** Dependabot + pre-commit
+  autoupdate
 
-- Fast feedback before commit
-- Auto-fixes formatting issues (Terraform, Markdown)
-- Blocks secrets from being committed
-- Validates YAML and GitHub Actions workflows
+## Quick Links
 
-#### Layer 2: GitHub Actions (CI)
-
-- Enforced validation on every PR
-- Security scanning with Checkov
-- Plan preview before merge
-
-#### Layer 3: Branch Protection
-
-- PR approval required
-- Status checks must pass
-- Prevents accidental direct commits
-
-#### Layer 4: Manual Deployment
-
-- Human review of plan output
-- Explicit approval to apply
-- Deployment gate via workflow_dispatch
-
-#### Layer 5: Automated Updates
-
-- Weekly dependency updates (Dependabot)
-- Weekly hook updates (pre-commit autoupdate)
-- Auto-created PRs for review
-
-## 🔗 Quick Links
-
-- [Architecture Documentation](docs/architecture.md)
-- [GitHub OIDC Setup Guide](docs/github-oidc-setup.md)
-- [GitHub Variables Setup Guide](docs/github-variables-setup.md)
+- [Architecture](docs/architecture.md)
+- [GitHub OIDC Setup](docs/github-oidc-setup.md)
+- [GitHub Variables Setup](docs/github-variables-setup.md)
+- [Prerequisites](docs/prerequisites.md)
 - [GitHub Actions](https://github.com/gamaware/aws-organization-governance/actions)
-- [AWS Organizations Console](https://console.aws.amazon.com/organizations/)
 
-## 📝 License
+## License
 
-MIT License - see LICENSE file for details
+MIT License — see LICENSE file for details.
 
-## 👤 Author
+## Author
 
 Created by [Alex Garcia](https://github.com/gamaware)
 
-- [LinkedIn Profile](https://www.linkedin.com/in/gamaware/)
-- [Personal Website](https://alexgarcia.info/)
+- [LinkedIn](https://www.linkedin.com/in/gamaware/)
+- [Website](https://alexgarcia.info/)
 
 > **Disclaimer**: All views and opinions expressed in this repository
 > are my own and do not represent the opinions of my employer.
