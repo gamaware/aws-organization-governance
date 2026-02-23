@@ -170,7 +170,7 @@
       "Effect": "Deny",
       "Action": [
         "sagemaker:CreateNotebookInstance",
-        "sagemaker:CreateEndpoint",
+        "sagemaker:CreateEndpointConfig",
         "sagemaker:CreateTrainingJob"
       ],
       "Resource": "*",
@@ -197,8 +197,11 @@
     {
       "Sid": "DenyLargeEBSVolumes",
       "Effect": "Deny",
-      "Action": "ec2:CreateVolume",
-      "Resource": "*",
+      "Action": [
+        "ec2:CreateVolume",
+        "ec2:RunInstances"
+      ],
+      "Resource": "arn:aws:ec2:*:*:volume/*",
       "Condition": {
         "NumericGreaterThan": {
           "ec2:VolumeSize": "100"

@@ -126,7 +126,7 @@ after creation.
 - Lightsail
 - GameLift
 - AWS Marketplace subscriptions (paid AMIs/SaaS)
-- SageMaker (except ml.t2, ml.t3 notebooks)
+- SageMaker (except ml.t2, ml.t3 instances)
 
 ### Storage Limits
 

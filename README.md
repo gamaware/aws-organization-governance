@@ -117,6 +117,7 @@ aws sts get-caller-identity
 | SCP | Target | Purpose |
 | --- | --- | --- |
 | DevEnvironmentRestrictions | Dev OU | Region lock (us-east-1), instance type limits, block root user, protect CloudTrail |
+| DevTaggingAndAbusePrevention | Dev OU | Required tagging, crypto-mining prevention, storage limits, data exposure protection |
 | ProtectSSOTrustedAccess | Org root | Prevents disabling IAM Identity Center trusted access |
 
 ### Terraform Backend
