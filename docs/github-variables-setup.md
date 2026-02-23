@@ -13,11 +13,11 @@ GitHub Actions.
 
 The following variables must be configured for the CI/CD pipeline:
 
-| Variable Name | Description | Example |
-| --------------- | ----------- | ------- |
-| `EXPECTED_ORG_ID` | AWS Organization ID (for validation) | `o-xxxxxxxxxx` |
-| `TF_VAR_dev_ou_id` | Development OU ID | `ou-xxxx-xxxxxxxx` |
-| `TF_VAR_aws_region` | AWS Region | `us-east-1` |
+| Variable Name       | Description                          | Example            |
+|---------------------|--------------------------------------|--------------------|
+| `EXPECTED_ORG_ID`   | AWS Organization ID (for validation) | `o-xxxxxxxxxx`     |
+| `TF_VAR_dev_ou_id`  | Development OU ID                    | `ou-xxxx-xxxxxxxx` |
+| `TF_VAR_aws_region` | AWS Region                           | `us-east-1`        |
 
 > `TF_VAR_` prefixed variables are passed to Terraform as input variables.
 > `EXPECTED_ORG_ID` is used only by post-deploy validation (not a Terraform

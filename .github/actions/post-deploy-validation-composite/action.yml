@@ -36,4 +36,6 @@ runs:
         DEV_SCP_ARN: ${{ steps.outputs.outputs.dev_scp_arn }}
         SSO_SCP_ID: ${{ steps.outputs.outputs.sso_scp_id }}
         SSO_SCP_ARN: ${{ steps.outputs.outputs.sso_scp_arn }}
+        DEV_TAGGING_SCP_ID: ${{ steps.outputs.outputs.dev_tagging_scp_id }}
+        DEV_TAGGING_SCP_ARN: ${{ steps.outputs.outputs.dev_tagging_scp_arn }}
       run: ${{ github.workspace }}/.github/scripts/validate-deployment.sh

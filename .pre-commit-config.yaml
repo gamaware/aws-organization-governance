@@ -38,12 +38,17 @@ repos:
       - id: terraform_validate
       - id: terraform_tflint
       - id: terrascan
-        files: \.tf$
+        files: ^terraform/scps/.*\.tf$
         args:
           - --args=--non-recursive
           - --args=--policy-type=aws
           - --args=--iac-version=v15
-          - --args=-d terraform/scps
+      - id: terraform_checkov
+        files: ^terraform/scps/.*\.tf$
+        args:
+          - --args=--quiet
+          - --args=--framework=terraform
+          - --args=--skip-check=CKV_AWS_274
 
   - repo: local
     hooks:

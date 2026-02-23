@@ -2,104 +2,12 @@
 # Prerequisite: Enable SCPs first (see docs/prerequisites.md)
 data "aws_organizations_organization" "org" {}
 
-# Dev OU Service Control Policy
+# Dev OU — Cost controls and security guardrails
 resource "aws_organizations_policy" "dev_scp" {
   name        = "DevEnvironmentRestrictions"
   description = "Cost controls and security guardrails for Dev OU"
   type        = "SERVICE_CONTROL_POLICY"
-
-  content = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid      = "DenyAllOutsideUSEast1"
-        Effect   = "Deny"
-        Action   = "*"
-        Resource = "*"
-        Condition = {
-          StringNotEquals = {
-            "aws:RequestedRegion" = "us-east-1"
-          }
-        }
-      },
-      {
-        Sid    = "DenyCostlyEC2Instances"
-        Effect = "Deny"
-        Action = [
-          "ec2:RunInstances",
-          "ec2:StartInstances"
-        ]
-        Resource = "arn:aws:ec2:*:*:instance/*"
-        Condition = {
-          StringNotLike = {
-            "ec2:InstanceType" = [
-              "t2.*",
-              "t3.*",
-              "t3a.*",
-              "t4g.*"
-            ]
-          }
-        }
-      },
-      {
-        Sid    = "DenyCostlyRDSInstances"
-        Effect = "Deny"
-        Action = [
-          "rds:CreateDBInstance",
-          "rds:CreateDBCluster"
-        ]
-        Resource = "*"
-        Condition = {
-          StringNotLike = {
-            "rds:DatabaseClass" = [
-              "db.t2.*",
-              "db.t3.*",
-              "db.t4g.*"
-            ]
-          }
-        }
-      },
-      {
-        Sid      = "DenyLeavingOrganization"
-        Effect   = "Deny"
-        Action   = "organizations:LeaveOrganization"
-        Resource = "*"
-      },
-      {
-        Sid      = "DenyRootUserActions"
-        Effect   = "Deny"
-        Action   = "*"
-        Resource = "*"
-        Condition = {
-          StringLike = {
-            "aws:PrincipalArn" = "arn:aws:iam::*:root"
-          }
-        }
-      },
-      {
-        Sid    = "DenyCloudTrailDeletion"
-        Effect = "Deny"
-        Action = [
-          "cloudtrail:DeleteTrail",
-          "cloudtrail:StopLogging",
-          "cloudtrail:UpdateTrail"
-        ]
-        Resource = "*"
-      },
-      {
-        Sid    = "DenyReservedInstancePurchase"
-        Effect = "Deny"
-        Action = [
-          "ec2:PurchaseReservedInstancesOffering",
-          "rds:PurchaseReservedDBInstancesOffering",
-          "elasticache:PurchaseReservedCacheNodesOffering",
-          "redshift:PurchaseReservedNodeOffering",
-          "dynamodb:PurchaseReservedCapacityOfferings"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
+  content     = file("${path.module}/policies/dev-restrictions.json")
 }
 
 resource "aws_organizations_policy_attachment" "dev_scp_attachment" {
@@ -107,29 +15,25 @@ resource "aws_organizations_policy_attachment" "dev_scp_attachment" {
   target_id = var.dev_ou_id
 }
 
-# Protect SSO trusted access from being disabled
-# Applied to root to protect the entire organization
+# Dev OU — Required tagging and abuse prevention
+resource "aws_organizations_policy" "dev_tagging" {
+  name        = "DevTaggingAndAbusePrevention"
+  description = "Require Team/Name tags and block abusable resources"
+  type        = "SERVICE_CONTROL_POLICY"
+  content     = file("${path.module}/policies/dev-tagging-and-abuse.json")
+}
+
+resource "aws_organizations_policy_attachment" "dev_tagging_attachment" {
+  policy_id = aws_organizations_policy.dev_tagging.id
+  target_id = var.dev_ou_id
+}
+
+# Org root — Protect SSO trusted access
 resource "aws_organizations_policy" "protect_sso" {
   name        = "ProtectSSOTrustedAccess"
   description = "Prevent disabling IAM Identity Center trusted access"
   type        = "SERVICE_CONTROL_POLICY"
-
-  content = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid      = "DenyDisableSSO"
-        Effect   = "Deny"
-        Action   = "organizations:DisableAWSServiceAccess"
-        Resource = "*"
-        Condition = {
-          StringEquals = {
-            "organizations:ServicePrincipal" = "sso.amazonaws.com"
-          }
-        }
-      }
-    ]
-  })
+  content     = file("${path.module}/policies/protect-sso.json")
 }
 
 resource "aws_organizations_policy_attachment" "protect_sso_root" {
