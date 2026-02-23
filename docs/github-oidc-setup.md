@@ -73,31 +73,69 @@ aws iam create-role \
 aws iam get-role --role-name GitHubActions-<PROJECT_NAME>
 ```
 
-## Step 3: Attach AWS Managed Policy for Organizations
+## Step 3: Create Scoped Policy for SCP Management
+
+> **WARNING**: Do NOT use `AWSOrganizationsFullAccess`.
+> It grants `DisableAWSServiceAccess` which can break
+> IAM Identity Center (SSO).
 
 ```bash
-aws iam attach-role-policy \
+aws iam put-role-policy \
   --role-name GitHubActions-<PROJECT_NAME> \
-  --policy-arn arn:aws:iam::aws:policy/AWSOrganizationsFullAccess
+  --policy-name SCPManagement \
+  --policy-document '{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Sid": "AllowSCPManagement",
+        "Effect": "Allow",
+        "Action": [
+          "organizations:CreatePolicy",
+          "organizations:UpdatePolicy",
+          "organizations:DeletePolicy",
+          "organizations:DescribePolicy",
+          "organizations:ListPolicies",
+          "organizations:ListPoliciesForTarget",
+          "organizations:AttachPolicy",
+          "organizations:DetachPolicy",
+          "organizations:ListTargetsForPolicy",
+          "organizations:DescribeOrganization",
+          "organizations:ListRoots",
+          "organizations:ListAccounts"
+        ],
+        "Resource": "*"
+      },
+      {
+        "Sid": "DenyDangerousActions",
+        "Effect": "Deny",
+        "Action": [
+          "organizations:DisableAWSServiceAccess",
+          "organizations:EnableAWSServiceAccess",
+          "organizations:DeleteOrganization",
+          "organizations:LeaveOrganization",
+          "organizations:RemoveAccountFromOrganization"
+        ],
+        "Resource": "*"
+      }
+    ]
+  }'
 ```
 
-**Verify attachment:**
+**Verify policy:**
 
 ```bash
-aws iam list-attached-role-policies --role-name GitHubActions-<PROJECT_NAME>
+aws iam get-role-policy \
+  --role-name GitHubActions-<PROJECT_NAME> \
+  --policy-name SCPManagement
 ```
 
-Expected output:
+If you previously attached `AWSOrganizationsFullAccess`, remove it:
 
-```json
-{
-    "AttachedPolicies": [
-        {
-            "PolicyName": "AWSOrganizationsFullAccess",
-            "PolicyArn": "arn:aws:iam::aws:policy/AWSOrganizationsFullAccess"
-        }
-    ]
-}
+```bash
+aws iam detach-role-policy \
+  --role-name GitHubActions-<PROJECT_NAME> \
+  --policy-arn \
+    arn:aws:iam::aws:policy/AWSOrganizationsFullAccess
 ```
 
 ## Step 4: Add Inline Policy for Terraform State Access
@@ -181,14 +219,14 @@ The complete setup consists of:
 
 2. **IAM Role:** `GitHubActions-<PROJECT_NAME>`
    - Trust policy: Allows GitHub Actions from specific repository
-   - Managed policy: `AWSOrganizationsFullAccess`
+   - Inline policy: `SCPManagement` (scoped Organizations access)
    - Inline policy: `TerraformStateAccess` (S3 bucket access)
 
 3. **GitHub Secret:** `AWS_ROLE_ARN`
 
 ## Security Best Practices
 
-1. **Least Privilege**: Uses AWS managed policy for Organizations + minimal S3 access
+1. **Least Privilege**: Scoped SCP management + explicit deny on dangerous actions
 2. **Repository Restriction**: Trust policy limits access to specific repository
 3. **No Long-lived Credentials**: OIDC tokens expire automatically
 4. **Audit Trail**: All actions logged in CloudTrail

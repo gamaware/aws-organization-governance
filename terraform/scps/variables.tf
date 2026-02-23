@@ -1,8 +1,3 @@
-variable "organization_id" {
-  description = "AWS Organization ID"
-  type        = string
-}
-
 variable "dev_ou_id" {
   description = "Dev OU ID"
   type        = string
