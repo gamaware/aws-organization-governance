@@ -1,0 +1,6 @@
+formatter: "markdown document"
+
+settings:
+  anchor: false
+  html: false
+  indent: 2

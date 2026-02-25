@@ -37,6 +37,10 @@ repos:
       - id: terraform_fmt
       - id: terraform_validate
       - id: terraform_tflint
+      - id: terraform_docs
+        args:
+          - --args=--output-file=README.md
+          - --args=--output-mode=inject
       - id: terrascan
         files: ^terraform/scps/.*\.tf$
         args:
