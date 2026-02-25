@@ -1,7 +1,3 @@
-# Reference existing AWS Organization (read-only)
-# Prerequisite: Enable SCPs first (see docs/prerequisites.md)
-data "aws_organizations_organization" "org" {}
-
 # Dev OU — Cost controls and security guardrails
 resource "aws_organizations_policy" "dev_scp" {
   name        = "DevEnvironmentRestrictions"
