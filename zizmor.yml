@@ -3,4 +3,8 @@ rules:
     config:
       policies:
         "*": ref-pin
-  secrets-outside-env: skip
+  secrets-outside-env:
+    ignore:
+      - drift-detection.yml
+      - terraform-cicd.yml
+      - terraform-pr.yml
