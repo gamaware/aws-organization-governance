@@ -155,6 +155,37 @@ runs:
       working-directory: ${{ inputs.working_directory }}
       run: terraform apply -auto-approve tfplan
 
+    - name: Terraform Destroy Plan Preview
+      if: inputs.terraform_command == 'destroy'
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        set +e
+        terraform plan -destroy -no-color 2>&1 | tee destroy-plan.txt
+        EXIT_CODE=$?
+        set -e
+
+        {
+          echo "## Terraform Destroy Plan Preview"
+          echo ""
+          if [ "$EXIT_CODE" -eq 0 ]; then
+            echo "✅ **No resources to destroy.** Infrastructure is clean."
+          elif [ "$EXIT_CODE" -eq 2 ]; then
+            DESTROY_COUNT=$(grep -c "will be destroyed" destroy-plan.txt || true)
+            echo "⚠️ **$DESTROY_COUNT resource(s) will be destroyed.**"
+            echo ""
+            echo "| Resource |"
+            echo "| -------- |"
+            grep "will be destroyed" destroy-plan.txt \
+              | sed 's/^.*# //' | sed 's/ will be destroyed//' \
+              | while IFS= read -r line; do echo "| \`$line\` |"; done
+          else
+            echo "❌ **Destroy plan failed.** Check the logs."
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        if [ "$EXIT_CODE" -eq 1 ]; then exit 1; fi
+
     - name: Terraform Destroy
       if: inputs.terraform_command == 'destroy'
       shell: bash

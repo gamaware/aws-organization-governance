@@ -176,7 +176,7 @@ Feature branch → PR → Checks pass → Merge → Auto plan → Approve → Au
 
 | Workflow | Trigger | Purpose |
 | --- | --- | --- |
-| `terraform-cicd.yml` | PR, push to main, manual | Plan/apply/destroy with environment approval, concurrency controls |
+| `terraform-cicd.yml` | Push to main, manual | Plan → environment approval → apply (artifact reuse), manual destroy |
 | `terraform-pr.yml` | PR | Lint (fmt, tflint), security (checkov), plan |
 | `quality-checks.yml` | PR, push to main | Markdownlint, shellcheck, yamllint, zizmor, structure validation |
 | `security.yml` | PR, push to main | Semgrep SAST, Trivy IaC scanning |

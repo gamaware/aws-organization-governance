@@ -145,13 +145,14 @@ Hooks in `.claude/settings.json` automate deterministic actions:
 
 ### terraform-cicd.yml
 
-Main pipeline — plan on PR/push, manual apply/destroy with post-deploy/destroy validation.
-Uses `production` environment with required reviewer approval for apply/destroy.
-Concurrency controls prevent simultaneous Terraform runs. Plan output posted as PR comment.
+Main pipeline — push to main triggers plan → apply pauses at `production`
+environment gate → reviewer approves → apply uses saved plan artifact (no re-plan).
+Destroy is manual only via `workflow_dispatch` with `plan -destroy` preview.
+Concurrency group (`terraform-state`) prevents simultaneous Terraform runs.
 
 ### terraform-pr.yml
 
-PR checks — TFLint, Checkov security scan, plan preview.
+PR checks — TFLint, Checkov security scan, plan preview, plan output as PR comment.
 
 ### drift-detection.yml
 

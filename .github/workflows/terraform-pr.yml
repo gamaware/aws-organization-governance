@@ -13,8 +13,8 @@ on:
       - '.github/scripts/**'
 
 concurrency:
-  group: terraform-state
-  cancel-in-progress: false
+  group: terraform-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   lint-and-security:

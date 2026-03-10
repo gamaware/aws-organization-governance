@@ -2,18 +2,9 @@ name: Terraform CI/CD
 run-name: >-
   ${{ github.event_name == 'workflow_dispatch'
     && format('Terraform {0}', inputs.action)
-    || github.event_name == 'push'
-    && format('Terraform plan → apply (push: {0})', github.event.head_commit.message)
-    || format('Terraform plan (PR #{0})', github.event.pull_request.number) }}
+    || format('Terraform plan → apply (push: {0})', github.event.head_commit.message) }}
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'terraform/**'
-      - '.github/workflows/terraform-cicd.yml'
-      - '.github/actions/terraform-composite/**'
-      - '.github/scripts/**'
   push:
     branches: [main]
     paths:
@@ -41,6 +32,7 @@ jobs:
     name: Terraform Plan
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'plan')
     permissions:
       id-token: write
       contents: read
@@ -67,7 +59,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: terraform-plan
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'plan')
     environment: production
     permissions:
       id-token: write
@@ -101,7 +92,6 @@ jobs:
     name: Terraform Destroy
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: terraform-plan
     if: github.event_name == 'workflow_dispatch' && inputs.action == 'destroy'
     environment: production
     permissions:
