@@ -12,25 +12,21 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write
     steps:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
 
-      - name: Run Semgrep
-        uses: semgrep/semgrep-action@v1
-        with:
-          config: >-
-            p/default
-            p/terraform
+      - name: Install and run Semgrep
+        run: |
+          pip install semgrep
+          semgrep scan --config p/default --config p/terraform --error .
 
   trivy:
     name: Trivy IaC Scan
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write
     steps:
       - uses: actions/checkout@v6
         with:
