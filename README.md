@@ -100,13 +100,15 @@ aws sts get-caller-identity
 │   ├── main.tf                            # Data source + SCPs
 │   └── outputs.tf                         # Output values
 ├── docs/
+│   ├── adr/                               # Architecture Decision Records
 │   ├── architecture.md                    # Architecture & design decisions
 │   ├── github-oidc-setup.md              # OIDC authentication setup
 │   ├── github-variables-setup.md         # GitHub Variables configuration
 │   └── prerequisites.md                  # One-time SCP enablement
 ├── .claude/
 │   ├── settings.json                      # Claude Code hooks configuration
-│   └── hooks/                             # Hook scripts (post-edit, protect-generated)
+│   ├── hooks/                             # Hook scripts (post-edit, protect-generated)
+│   └── skills/new-scp/                    # SCP scaffolding skill
 ├── .coderabbit.yaml                       # CodeRabbit AI review config
 ├── .tflint.hcl                            # TFLint configuration
 ├── .pre-commit-config.yaml               # Pre-commit hook configuration
@@ -176,6 +178,8 @@ Feature branch → PR → Checks pass → Merge → Auto plan → Manual apply
 | --- | --- | --- |
 | `terraform-cicd.yml` | PR, push to main, manual | Plan/apply/destroy with post-deploy and post-destroy validation |
 | `terraform-pr.yml` | PR | Lint (fmt, tflint), security (checkov), plan |
+| `quality-checks.yml` | PR, push to main | Markdownlint, shellcheck, yamllint, zizmor, structure validation |
+| `security.yml` | PR, push to main | Semgrep SAST, Trivy IaC scanning |
 | `drift-detection.yml` | Daily 9 AM UTC | Detects config drift, creates GitHub issue |
 | `update-pre-commit-hooks.yml` | Weekly Sunday | Auto-updates hook versions, creates PR |
 
@@ -193,8 +197,8 @@ See [GitHub OIDC Setup Guide](docs/github-oidc-setup.md).
 
 | Layer | Mechanism |
 | --- | --- |
-| Pre-commit (local) | 22 hooks — formatting, validation, security, linting |
-| PR checks (CI) | TFLint, Checkov, plan, CodeRabbit AI review |
+| Pre-commit (local) | 25+ hooks — formatting, validation, security, linting |
+| PR checks (CI) | TFLint, Checkov, plan, quality checks, security scanning, CodeRabbit + Copilot AI review |
 | Branch protection | PR required, status checks must pass, no direct pushes |
 | Deployment gate | Manual trigger for apply/destroy |
 | Post-deploy validation | AWS CLI checks — SCPs exist, attached correctly, content verified |
@@ -205,6 +209,7 @@ See [GitHub OIDC Setup Guide](docs/github-oidc-setup.md).
 ## Quick Links
 
 - [Architecture](docs/architecture.md)
+- [Architecture Decision Records](docs/adr/)
 - [GitHub OIDC Setup](docs/github-oidc-setup.md)
 - [GitHub Variables Setup](docs/github-variables-setup.md)
 - [Prerequisites](docs/prerequisites.md)
