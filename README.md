@@ -161,14 +161,14 @@ aws sts get-caller-identity
 ## Development Workflow
 
 ```text
-Feature branch → PR → Checks pass → Merge → Auto plan → Manual apply
+Feature branch → PR → Checks pass → Merge → Auto plan → Approve → Auto apply
 ```
 
 1. Create feature branch, make changes, commit (pre-commit hooks run)
 2. Push and create PR — automated checks: lint, security scan, plan preview
-3. CodeRabbit provides AI-powered code review
-4. Merge to main — plan runs automatically
-5. Review plan, then manually trigger apply via Actions → Terraform CI/CD
+3. CodeRabbit + Copilot provide AI-powered code review
+4. Merge to main — plan runs automatically, apply job pauses at environment gate
+5. Click "Review deployments" → Approve → apply runs using the same plan (no re-run)
 
 ## CI/CD Pipeline
 
