@@ -53,6 +53,22 @@ Applied to: Organization root
 **Purpose:** Prevent accidental or malicious disabling of IAM Identity
 Center (SSO) trusted access, which would break SSO for all accounts.
 
+### RegionRestriction
+
+Applied to: Organization root
+
+**Guardrails:**
+
+- Deny all actions outside `us-east-1` for all accounts
+- Exempt global services that operate from `us-east-1` only
+  (IAM, STS, CloudFront, Route 53, Organizations, Billing, WAF, etc.)
+- Uses `NotAction` pattern to allowlist global services
+
+**Purpose:** Organization-wide region restriction that prevents any account
+from deploying resources in unapproved regions. Unlike the Dev OU restriction
+which uses a blanket `Action: *` deny, this SCP properly exempts global
+services that require cross-region access to function correctly.
+
 ## IAM Strategy
 
 ### GitHub Actions Role

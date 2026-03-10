@@ -103,10 +103,17 @@ aws sts get-caller-identity
 │   ├── github-oidc-setup.md              # OIDC authentication setup
 │   ├── github-variables-setup.md         # GitHub Variables configuration
 │   └── prerequisites.md                  # One-time SCP enablement
+├── .claude/
+│   ├── settings.json                      # Claude Code hooks configuration
+│   └── hooks/                             # Hook scripts (post-edit, protect-generated)
 ├── .coderabbit.yaml                       # CodeRabbit AI review config
 ├── .tflint.hcl                            # TFLint configuration
 ├── .pre-commit-config.yaml               # Pre-commit hook configuration
 ├── .secrets.baseline                      # Detect-secrets baseline
+├── CLAUDE.md                              # Claude Code project instructions
+├── CODEOWNERS                             # Default code ownership
+├── CONTRIBUTING.md                        # Contribution guidelines
+├── SECURITY.md                            # Security disclosure policy
 └── README.md
 ```
 
@@ -119,6 +126,7 @@ aws sts get-caller-identity
 | DevEnvironmentRestrictions | Dev OU | Region lock (us-east-1), instance type limits, block root user, protect CloudTrail |
 | DevTaggingAndAbusePrevention | Dev OU | Required tagging, crypto-mining prevention, storage limits, data exposure protection |
 | ProtectSSOTrustedAccess | Org root | Prevents disabling IAM Identity Center trusted access |
+| RegionRestriction | Org root | Restricts all accounts to approved regions (us-east-1), exempts global services |
 
 ### Terraform Backend
 

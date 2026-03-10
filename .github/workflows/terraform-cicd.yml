@@ -60,6 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: terraform-plan
     if: github.event_name == 'workflow_dispatch' && inputs.action == 'apply'
+    environment: development
     env:
       TF_VAR_dev_ou_id: ${{ vars.TF_VAR_dev_ou_id }}
       TF_VAR_aws_region: ${{ vars.TF_VAR_aws_region }}
@@ -88,6 +89,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: terraform-plan
     if: github.event_name == 'workflow_dispatch' && inputs.action == 'destroy'
+    environment: development
     env:
       TF_VAR_dev_ou_id: ${{ vars.TF_VAR_dev_ou_id }}
       TF_VAR_aws_region: ${{ vars.TF_VAR_aws_region }}
