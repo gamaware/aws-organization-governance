@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Post-edit hook: auto-fix shell scripts and markdown files after edits
 set -euo pipefail
 

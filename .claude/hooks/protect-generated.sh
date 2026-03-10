@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Pre-edit hook: block edits to auto-generated files
 set -euo pipefail
 

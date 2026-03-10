@@ -172,8 +172,9 @@ Monitors GitHub Actions and Terraform provider dependencies weekly.
 - `.gitignore` excludes: `.env`, `.env.local`, `*.pem`, `*.key`, `credentials.json`.
 - `detect-secrets` baseline must be updated for false positives:
   `detect-secrets scan --update .secrets.baseline`.
-- Use placeholder values in documentation (`YOUR_AWS_ACCOUNT_ID`,
-  `YOUR_ORG_ID`, `YOUR_OU_ID`).
+- Use placeholder values in documentation and examples (`YOUR_AWS_ACCOUNT_ID`,
+  `YOUR_ORG_ID`, `YOUR_OU_ID`). Terraform backend and infra config may contain
+  org-specific values — this rule applies to docs and public-facing content.
 
 ## Content Rules
 

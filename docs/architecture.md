@@ -60,14 +60,17 @@ Applied to: Organization root
 **Guardrails:**
 
 - Deny all actions outside `us-east-1` for all accounts
-- Exempt global services that operate from `us-east-1` only
-  (IAM, STS, CloudFront, Route 53, Organizations, Billing, WAF, etc.)
-- Uses `NotAction` pattern to allowlist global services
+- Exempt truly global services via `NotAction`: IAM, STS, Organizations,
+  Route 53, CloudFront, Shield, Global Accelerator, WAF Classic (global scope),
+  Billing, Cost Explorer, Budgets, Support, Health, Trusted Advisor,
+  Tag Editor, Marketplace, and S3 bucket listing
+- Regional services (ACM, KMS, WAFv2, etc.) are NOT exempted — they operate
+  within the allowed region only
 
 **Purpose:** Organization-wide region restriction that prevents any account
-from deploying resources in unapproved regions. Unlike the Dev OU restriction
-which uses a blanket `Action: *` deny, this SCP properly exempts global
-services that require cross-region access to function correctly.
+from deploying resources in unapproved regions. Uses the `NotAction` pattern
+to exempt only services with global endpoints, ensuring regional services
+like KMS and ACM can only operate within allowed regions.
 
 ## IAM Strategy
 
