@@ -90,7 +90,7 @@ All hooks must pass before committing. Install with `pre-commit install`.
   terraform\_docs, terrascan, terraform\_checkov.
 - **Shell**: shellcheck (severity: warning), shellharden.
 - **Markdown**: markdownlint with `--fix`.
-- **GitHub Actions**: actionlint.
+- **GitHub Actions**: actionlint, zizmor (security analysis).
 - **Commits**: conventional-pre-commit (commit-msg stage).
 
 ## Claude Code Hooks
