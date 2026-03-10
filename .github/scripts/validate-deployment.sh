@@ -47,8 +47,6 @@ POLICY_CONTENT=$(aws organizations describe-policy \
   --query 'Policy.Content' \
   --output text)
 
-echo "$POLICY_CONTENT" | grep -q "us-east-1" || fail "Region restriction not found"
-pass "Region restriction validated"
 echo "$POLICY_CONTENT" | grep -q "ec2:InstanceType" || fail "Instance type restriction not found"
 pass "Instance type restriction validated"
 echo "$POLICY_CONTENT" | grep -q "aws:PrincipalArn" || fail "Root user restriction not found"

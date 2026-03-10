@@ -18,7 +18,8 @@ controls across multiple AWS accounts.
 - Python 3.x (for pre-commit hooks)
 - [shellcheck](https://github.com/koalaman/shellcheck),
   [shellharden](https://github.com/anordal/shellharden),
-  [gitleaks](https://github.com/gitleaks/gitleaks) (for local hooks)
+  [gitleaks](https://github.com/gitleaks/gitleaks),
+  [zizmor](https://github.com/woodruffw/zizmor) (for local hooks)
 - Git
 
 ## Local Development Setup
@@ -123,7 +124,7 @@ aws sts get-caller-identity
 
 | SCP | Target | Purpose |
 | --- | --- | --- |
-| DevEnvironmentRestrictions | Dev OU | Region lock (us-east-1), instance type limits, block root user, protect CloudTrail |
+| DevEnvironmentRestrictions | Dev OU | Instance type limits, block root user, protect CloudTrail, block admin policies |
 | DevTaggingAndAbusePrevention | Dev OU | Required tagging, crypto-mining prevention, storage limits, data exposure protection |
 | ProtectSSOTrustedAccess | Org root | Prevents disabling IAM Identity Center trusted access |
 | RegionRestriction | Org root | Restricts all accounts to approved regions (us-east-1), exempts global services |

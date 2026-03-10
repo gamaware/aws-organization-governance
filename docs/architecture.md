@@ -28,16 +28,18 @@ Applied to: Dev OU
 
 **Guardrails:**
 
-- Restrict to us-east-1 region only
 - Allow only cost-effective EC2 instances (t2, t3, t3a, t4g families)
 - Allow only cost-effective RDS instances (db.t2, db.t3, db.t4g families)
 - Prevent leaving organization
 - Block root user actions
 - Prevent CloudTrail deletion/modification
 - Block Reserved Instance purchases
+- Block admin policy attachment
 
 **Purpose:** Enable developers to experiment while maintaining cost
-controls and security guardrails.
+controls and security guardrails. Region restriction is handled by the
+org-root RegionRestriction SCP to avoid conflicting with global service
+exemptions.
 
 ### ProtectSSOTrustedAccess
 
