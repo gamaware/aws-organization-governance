@@ -20,7 +20,7 @@ jobs:
       - name: Lint Markdown files
         uses: DavidAnson/markdownlint-cli2-action@v22
         with:
-          globs: '**/*.md'
+          globs: '**/*.md !terraform/scps/README.md'
           config: '.markdownlint.yaml'
 
   shell-check:

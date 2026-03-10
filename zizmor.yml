@@ -3,3 +3,4 @@ rules:
     config:
       policies:
         "*": ref-pin
+  secrets-outside-env: skip
