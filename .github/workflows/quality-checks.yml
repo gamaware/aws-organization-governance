@@ -137,9 +137,11 @@ jobs:
           persist-credentials: false
 
       - name: Install zizmor
+        env:
+          ZIZMOR_VERSION: "1.23.1"
         run: |
           tmpdir="$(mktemp -d)"
-          curl -fsL https://github.com/woodruffw/zizmor/releases/latest/download/zizmor-x86_64-unknown-linux-gnu.tar.gz \
+          curl -fsL "https://github.com/woodruffw/zizmor/releases/download/v${ZIZMOR_VERSION}/zizmor-x86_64-unknown-linux-gnu.tar.gz" \
             | tar xz -C "$tmpdir"
           sudo mv "$tmpdir/zizmor" /usr/local/bin/zizmor
 

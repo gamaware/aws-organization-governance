@@ -197,7 +197,7 @@ See [GitHub OIDC Setup Guide](docs/github-oidc-setup.md).
 
 | Layer | Mechanism |
 | --- | --- |
-| Pre-commit (local) | 22 hooks — formatting, validation, security, linting |
+| Pre-commit (local) | 25+ hooks — formatting, validation, security, linting |
 | PR checks (CI) | TFLint, Checkov, plan, quality checks, security scanning, CodeRabbit + Copilot AI review |
 | Branch protection | PR required, status checks must pass, no direct pushes |
 | Deployment gate | Manual trigger for apply/destroy |

@@ -25,7 +25,8 @@ Argument: `$ARGUMENTS` contains two parts:
 4. Create `terraform/scps/policies/<policy-name>.json` with:
    - Valid AWS IAM policy structure: `Version` and `Statement` array
    - Statement Sids in PascalCase starting with `Deny`
-   - Placeholder deny statement with `TODO` comment for the user to fill in
+   - Placeholder deny statement using `Deny` + `"*"` action on a dummy resource
+     that the user will replace with actual deny rules
 5. Edit `terraform/scps/main.tf` to add:
    - `aws_organizations_policy.<snake_case_name>` resource with:
      - `name` in PascalCase (convert from kebab-case)
