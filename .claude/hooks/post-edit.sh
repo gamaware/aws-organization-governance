@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Post-edit hook: auto-fix shell scripts and markdown files after edits
+# Post-edit hook: auto-fix and validate files after edits
 set -euo pipefail
 
 if ! command -v jq >/dev/null 2>&1; then
@@ -22,4 +22,16 @@ fi
 # Auto-fix markdown with markdownlint
 if [[ "$FILE_PATH" =~ \.md$ ]]; then
   npx markdownlint --fix "$FILE_PATH" 2>/dev/null || true
+fi
+
+# Auto-format Terraform files
+if [[ "$FILE_PATH" =~ \.tf$ ]]; then
+  terraform fmt "$FILE_PATH" 2>/dev/null || true
+fi
+
+# Validate JSON policy files
+if [[ "$FILE_PATH" =~ policies/.*\.json$ ]]; then
+  if ! python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$FILE_PATH" 2>/dev/null; then
+    echo "Warning: $FILE_PATH is not valid JSON" >&2
+  fi
 fi
