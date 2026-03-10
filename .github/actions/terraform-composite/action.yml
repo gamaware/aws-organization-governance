@@ -28,7 +28,7 @@ runs:
       with:
         role-to-assume: ${{ inputs.aws_role_arn }}
         aws-region: ${{ inputs.aws_region }}
-        role-session-name: GitHubActions-${{ github.workflow }}-${{ github.run_id }}
+        role-session-name: GitHubActions-Terraform-${{ github.run_id }}
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
