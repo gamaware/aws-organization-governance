@@ -176,7 +176,7 @@ Feature branch → PR → Checks pass → Merge → Auto plan → Manual apply
 
 | Workflow | Trigger | Purpose |
 | --- | --- | --- |
-| `terraform-cicd.yml` | PR, push to main, manual | Plan/apply/destroy with post-deploy and post-destroy validation |
+| `terraform-cicd.yml` | PR, push to main, manual | Plan/apply/destroy with environment approval, concurrency controls |
 | `terraform-pr.yml` | PR | Lint (fmt, tflint), security (checkov), plan |
 | `quality-checks.yml` | PR, push to main | Markdownlint, shellcheck, yamllint, zizmor, structure validation |
 | `security.yml` | PR, push to main | Semgrep SAST, Trivy IaC scanning |
@@ -200,7 +200,7 @@ See [GitHub OIDC Setup Guide](docs/github-oidc-setup.md).
 | Pre-commit (local) | 25+ hooks — formatting, validation, security, linting |
 | PR checks (CI) | TFLint, Checkov, plan, quality checks, security scanning, CodeRabbit + Copilot AI review |
 | Branch protection | PR required, status checks must pass, no direct pushes |
-| Deployment gate | Manual trigger for apply/destroy |
+| Deployment gate | `production` environment with required reviewer approval |
 | Post-deploy validation | AWS CLI checks — SCPs exist, attached correctly, content verified |
 | Post-destroy validation | AWS CLI checks — SCPs removed, no orphaned policies |
 | Drift detection | Daily scheduled plan, auto-creates issue on drift |

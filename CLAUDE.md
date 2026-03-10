@@ -146,6 +146,8 @@ Hooks in `.claude/settings.json` automate deterministic actions:
 ### terraform-cicd.yml
 
 Main pipeline — plan on PR/push, manual apply/destroy with post-deploy/destroy validation.
+Uses `production` environment with required reviewer approval for apply/destroy.
+Concurrency controls prevent simultaneous Terraform runs. Plan output posted as PR comment.
 
 ### terraform-pr.yml
 

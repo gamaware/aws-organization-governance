@@ -13,12 +13,14 @@ on:
       - 'terraform/**'
       - '.github/workflows/terraform-cicd.yml'
       - '.github/actions/terraform-composite/**'
+      - '.github/scripts/**'
   push:
     branches: [main]
     paths:
       - 'terraform/**'
       - '.github/workflows/terraform-cicd.yml'
       - '.github/actions/terraform-composite/**'
+      - '.github/scripts/**'
   workflow_dispatch:
     inputs:
       action:
@@ -31,10 +33,15 @@ on:
           - destroy
         default: plan
 
+concurrency:
+  group: terraform-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   terraform-plan:
     name: Terraform Plan
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       id-token: write
       contents: read
@@ -59,9 +66,10 @@ jobs:
   terraform-apply:
     name: Terraform Apply
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: terraform-plan
     if: github.event_name == 'workflow_dispatch' && inputs.action == 'apply'
-    environment: development
+    environment: production
     permissions:
       id-token: write
       contents: read
@@ -93,9 +101,10 @@ jobs:
   terraform-destroy:
     name: Terraform Destroy
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: terraform-plan
     if: github.event_name == 'workflow_dispatch' && inputs.action == 'destroy'
-    environment: development
+    environment: production
     permissions:
       id-token: write
       contents: read

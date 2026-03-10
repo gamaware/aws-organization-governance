@@ -10,6 +10,7 @@ jobs:
   markdown-lint:
     name: Markdown Linting
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -26,6 +27,7 @@ jobs:
   shell-check:
     name: Shell Script Validation
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -42,6 +44,7 @@ jobs:
   yaml-lint:
     name: YAML Validation
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -59,6 +62,7 @@ jobs:
   file-structure:
     name: Validate Repository Structure
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -99,6 +103,7 @@ jobs:
   readme-quality:
     name: README Quality Check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -129,6 +134,7 @@ jobs:
   actions-security:
     name: Actions Security (zizmor)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
