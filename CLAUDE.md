@@ -30,6 +30,7 @@ terraform/scps/
   versions.tf                 # Terraform and provider versions
   terraform.tfvars.example    # Variable template
 docs/
+  adr/                        # Architecture Decision Records
   architecture.md             # Architecture and design decisions
   github-oidc-setup.md        # OIDC authentication setup
   github-variables-setup.md   # GitHub Variables configuration
@@ -38,6 +39,7 @@ docs/
 .claude/
   settings.json               # Claude Code hooks configuration
   hooks/                      # Hook scripts (post-edit, protect-generated)
+  skills/new-scp/             # Scaffold new SCP (/new-scp skill)
 ```
 
 ### SCP Naming
@@ -157,6 +159,15 @@ Daily at 9 AM UTC — detects config drift, creates GitHub issue.
 
 Weekly auto-update of pre-commit hook versions via PR.
 
+### quality-checks.yml
+
+Runs on every PR and push to main — markdownlint, shellcheck, yamllint, zizmor,
+file structure validation, README quality check.
+
+### security.yml
+
+Runs on every PR and push to main — Semgrep SAST and Trivy IaC scanning.
+
 ### Dependabot
 
 Monitors GitHub Actions and Terraform provider dependencies weekly.
@@ -170,6 +181,18 @@ Monitors GitHub Actions and Terraform provider dependencies weekly.
 - Both reviewers run on every PR. Address comments from both before merging.
 - Reviewers may comment on issues already fixed in subsequent commits.
   Verify current file state before acting — stale comments can be dismissed.
+
+## Architecture Decision Records
+
+ADRs are in `docs/adr/` using dateless format (no dates in filenames or content).
+When making significant architectural decisions, create a new ADR following the
+existing pattern (Status, Context, Decision, Consequences).
+
+## Claude Code Skills
+
+- **`/new-scp`** — Scaffolds a new SCP: creates JSON policy file, adds Terraform
+  resource and attachment in `main.tf`, adds outputs, updates validation scripts.
+  Usage: `/new-scp policy-name target-type` (e.g., `/new-scp data-protection ou`).
 
 ## Security
 
