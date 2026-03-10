@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: terraform-drift
+  group: terraform-state
   cancel-in-progress: false
 
 jobs:

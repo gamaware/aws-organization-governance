@@ -28,7 +28,7 @@ runs:
       with:
         role-to-assume: ${{ inputs.aws_role_arn }}
         aws-region: ${{ inputs.aws_region }}
-        role-session-name: GitHubActions-${{ github.workflow_ref && 'Terraform' || 'Terraform' }}-${{ github.run_id }}
+        role-session-name: GitHubActions-${{ github.workflow }}-${{ github.run_id }}
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
@@ -96,28 +96,33 @@ runs:
             planOutput = planOutput.substring(0, maxLen) + '\n\n... (truncated)';
           }
 
-          const body = `### Terraform Plan Output
+          const body = [
+            '### Terraform Plan Output',
+            '',
+            '<details>',
+            '<summary>Click to expand plan</summary>',
+            '',
+            '```terraform',
+            planOutput,
+            '```',
+            '',
+            '</details>',
+            '',
+            `*Workflow: \`${{ github.workflow }}\` | Run: [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})*`,
+          ].join('\n');
 
-          <details>
-          <summary>Click to expand plan</summary>
-
-          \`\`\`terraform
-          ${planOutput}
-          \`\`\`
-
-          </details>
-
-          *Workflow: \`${{ github.workflow }}\` | Run: [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})*`;
-
-          // Find and update existing comment or create new one
-          const { data: comments } = await github.rest.issues.listComments({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: context.issue.number,
-          });
+          // Paginate to find existing bot comment
+          const comments = await github.paginate(
+            github.rest.issues.listComments,
+            {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            }
+          );
 
           const botComment = comments.find(c =>
-            c.body.includes('### Terraform Plan Output')
+            c.user.type === 'Bot' && c.body.includes('### Terraform Plan Output')
           );
 
           if (botComment) {
