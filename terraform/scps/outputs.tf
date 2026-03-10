@@ -37,3 +37,13 @@ output "dev_tagging_scp_arn" {
   description = "Dev Tagging and Abuse Prevention SCP Policy ARN"
   value       = aws_organizations_policy.dev_tagging.arn
 }
+
+output "region_restriction_scp_id" {
+  description = "Region Restriction SCP Policy ID"
+  value       = aws_organizations_policy.region_restriction.id
+}
+
+output "region_restriction_scp_arn" {
+  description = "Region Restriction SCP Policy ARN"
+  value       = aws_organizations_policy.region_restriction.arn
+}

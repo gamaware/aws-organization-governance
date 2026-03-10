@@ -2,17 +2,6 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "DenyAllOutsideUSEast1",
-      "Effect": "Deny",
-      "Action": "*",
-      "Resource": "*",
-      "Condition": {
-        "StringNotEquals": {
-          "aws:RequestedRegion": "us-east-1"
-        }
-      }
-    },
-    {
       "Sid": "DenyCostlyEC2Instances",
       "Effect": "Deny",
       "Action": [

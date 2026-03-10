@@ -1,0 +1,184 @@
+# CLAUDE.md — Project Instructions for Claude Code
+
+This file is automatically loaded into context when Claude Code starts a conversation
+in this repository. It defines the conventions, rules, and structure that must be followed.
+
+## Repository Overview
+
+Infrastructure as Code (IaC) repository for managing AWS Organizations governance:
+Service Control Policies (SCPs), Organizational Units (OUs), and security controls
+across multiple AWS accounts. Uses Terraform with S3 backend and GitHub Actions CI/CD.
+
+## Repository Structure
+
+```text
+.github/
+  actions/                    # Composite actions (terraform, drift, validation, lint)
+  scripts/                    # Shell scripts called by composite actions
+  workflows/                  # CI/CD pipelines
+  ISSUE_TEMPLATE/             # Issue templates
+  PULL_REQUEST_TEMPLATE.md    # PR template
+  copilot-instructions.md     # Copilot code review custom instructions
+terraform/scps/
+  policies/                   # SCP JSON policy files
+  main.tf                     # SCP resources and attachments
+  data.tf                     # Organization data source
+  variables.tf                # Input variables
+  outputs.tf                  # Output values
+  backend.tf                  # S3 backend with native locking
+  providers.tf                # AWS provider configuration
+  versions.tf                 # Terraform and provider versions
+  terraform.tfvars.example    # Variable template
+docs/
+  architecture.md             # Architecture and design decisions
+  github-oidc-setup.md        # OIDC authentication setup
+  github-variables-setup.md   # GitHub Variables configuration
+  prerequisites.md            # One-time SCP enablement
+  student-guide.md            # Dev account user guide
+.claude/
+  settings.json               # Claude Code hooks configuration
+  hooks/                      # Hook scripts (post-edit, protect-generated)
+```
+
+### SCP Naming
+
+- Terraform resource names: `snake_case` (e.g., `dev_scp`, `protect_sso`)
+- AWS policy names: `PascalCase` (e.g., `DevEnvironmentRestrictions`, `ProtectSSOTrustedAccess`)
+- JSON policy files: `kebab-case` in `terraform/scps/policies/` (e.g., `dev-restrictions.json`)
+- Statement Sids: `PascalCase` starting with `Deny` (e.g., `DenyAllOutsideUSEast1`)
+
+### SCP Architecture
+
+- **Dev OU SCPs**: Cost controls, instance restrictions, tagging enforcement, abuse prevention
+- **Org root SCPs**: Organization-wide security (SSO protection, region restriction)
+- Each SCP is a separate JSON file loaded via `file()` in `main.tf`
+- SCP JSON must be valid AWS IAM policy syntax with `Version` and `Statement` array
+
+## Git Workflow
+
+### Commits
+
+- **Conventional commits required** — enforced by `conventional-pre-commit` hook.
+- Format: `type: description` (e.g., `fix:`, `feat:`, `docs:`, `chore:`, `ci:`).
+- Never commit directly to `main` — enforced by `no-commit-to-branch` hook.
+- Always work on a feature branch and create a PR.
+- Do NOT add `Co-Authored-By` watermarks or any Claude/AI attribution to commits,
+  code, or content. Ever.
+
+### Pull Requests
+
+- All changes go through PRs — no direct pushes to `main`.
+- Squash merge only (merge commits and rebase disabled).
+- CodeRabbit and GitHub Copilot auto-review all PRs — address their comments before merging.
+- All required status checks must pass before merge.
+- At least 1 approving review required (CODEOWNERS enforced).
+- All review conversations must be resolved before merge.
+- Use `--admin` flag to bypass branch protection when necessary.
+
+## Pre-commit Hooks
+
+All hooks must pass before committing. Install with `pre-commit install`.
+
+### Hooks in use
+
+- **General**: trailing-whitespace, end-of-file-fixer, check-yaml, check-json,
+  check-added-large-files (1MB), check-merge-conflict, detect-private-key,
+  check-executables-have-shebangs, check-shebang-scripts-are-executable,
+  check-symlinks, check-case-conflict, no-commit-to-branch (main).
+- **Secrets**: detect-secrets (with `.secrets.baseline`), gitleaks.
+- **Terraform**: terraform\_fmt, terraform\_validate, terraform\_tflint,
+  terraform\_docs, terrascan, terraform\_checkov.
+- **Shell**: shellcheck (severity: warning), shellharden.
+- **Markdown**: markdownlint with `--fix`.
+- **GitHub Actions**: actionlint, zizmor (security analysis).
+- **Commits**: conventional-pre-commit (commit-msg stage).
+
+## Claude Code Hooks
+
+Hooks in `.claude/settings.json` automate deterministic actions:
+
+- **Post-edit** (`post-edit.sh`): Auto-runs `shellharden --replace` and `chmod +x` on
+  `.sh` files, `markdownlint --fix` on `.md` files after every Edit/Write.
+- **Protect generated** (`protect-generated.sh`): Blocks edits to auto-generated files
+  like `terraform/scps/README.md` (exit code 2 prevents the action).
+
+## Linting Policy
+
+### Absolute rule: NO suppressions on our own code
+
+- All default linting rules are enforced. Fix violations, never suppress them.
+- Markdownlint config: MD013 line length at 120 characters, tables exempt.
+  That is the ONLY customization in `.markdownlint.yaml`.
+- `.markdownlintignore` excludes only auto-generated `terraform/scps/README.md`.
+
+### Allowed exclusions
+
+- `terraform_checkov` skips `CKV_AWS_274` (organizational SCPs are deny-only by design).
+- These are the ONLY acceptable exclusions. Do not add more without explicit approval.
+
+## Shell Scripts
+
+- Must pass both `shellcheck` and `shellharden`.
+- Quote all variables. Prefer `"$var"` over `"${var}"` — only use braces when needed
+  (e.g., `"${var}_suffix"`).
+- Use arrays properly for word splitting scenarios.
+- Scripts must have shebangs (`#!/usr/bin/env bash`) and executable permissions.
+- Editing tools may strip executable permissions — verify with `git diff --summary`
+  and restore with `chmod +x <script>` if needed.
+
+## Markdown
+
+- Line length limit: 120 characters (MD013).
+- Tables are exempt from line length.
+- Table separator lines must have spaces around pipes: `| --- | --- |` not `|---|---|`.
+- Use ATX headings (`#`), not bold text as headings.
+- Fenced code blocks must specify a language.
+
+## CI/CD Pipelines
+
+### terraform-cicd.yml
+
+Main pipeline — plan on PR/push, manual apply/destroy with post-deploy/destroy validation.
+
+### terraform-pr.yml
+
+PR checks — TFLint, Checkov security scan, plan preview.
+
+### drift-detection.yml
+
+Daily at 9 AM UTC — detects config drift, creates GitHub issue.
+
+### update-pre-commit-hooks.yml
+
+Weekly auto-update of pre-commit hook versions via PR.
+
+### Dependabot
+
+Monitors GitHub Actions and Terraform provider dependencies weekly.
+
+## Code Review
+
+- **CodeRabbit** — Auto-reviews via `.coderabbit.yaml`. Path-specific instructions
+  for Terraform, workflows, and scripts.
+- **GitHub Copilot** — Auto-reviews via ruleset. Custom instructions in
+  `.github/copilot-instructions.md`.
+- Both reviewers run on every PR. Address comments from both before merging.
+- Reviewers may comment on issues already fixed in subsequent commits.
+  Verify current file state before acting — stale comments can be dismissed.
+
+## Security
+
+- Never commit secrets, credentials, private keys, or `.env` files.
+- `.gitignore` excludes: `.env`, `.env.local`, `*.pem`, `*.key`, `credentials.json`.
+- `detect-secrets` baseline must be updated for false positives:
+  `detect-secrets scan --update .secrets.baseline`.
+- Use placeholder values in documentation and examples (`YOUR_AWS_ACCOUNT_ID`,
+  `YOUR_ORG_ID`, `YOUR_OU_ID`). Terraform backend and infra config may contain
+  org-specific values — this rule applies to docs and public-facing content.
+
+## Content Rules
+
+- **Dateless** — No semester names, specific dates, or time-bound links.
+- **English only** — All content, code comments, and output in English.
+- **Placeholders** — Never hardcode AWS account IDs, credentials, or org IDs.
+- **Cross-references** — Directory paths must match actual directory names.

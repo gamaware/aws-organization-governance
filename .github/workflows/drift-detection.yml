@@ -6,21 +6,22 @@ on:
     - cron: '0 9 * * *'
   workflow_dispatch:
 
-permissions:
-  id-token: write
-  contents: read
-  issues: write
-
 jobs:
   detect-drift:
     name: Detect Configuration Drift
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      issues: write
     env:
       TF_VAR_dev_ou_id: ${{ vars.TF_VAR_dev_ou_id }}
       TF_VAR_aws_region: ${{ vars.TF_VAR_aws_region }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Detect Drift
         uses: ./.github/actions/drift-detection-composite

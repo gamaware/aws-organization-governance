@@ -16,6 +16,10 @@ reviews:
       instructions: >
         Review for shell scripting best practices, proper error handling,
         and shellcheck/shellharden compliance.
+    - path: "CLAUDE.md"
+      instructions: >
+        Verify project instructions match the actual repository structure,
+        naming conventions, and tooling configuration.
   path_filters:
     - "!**/*.tfvars"
     - "!**/.terraform.lock.hcl"

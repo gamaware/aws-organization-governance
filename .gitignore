@@ -28,6 +28,11 @@ override.tf.json
 .venv/
 venv/
 
+# Credentials
+*.pem
+*.key
+credentials.json
+
 # Pre-commit
 .secrets.baseline
 

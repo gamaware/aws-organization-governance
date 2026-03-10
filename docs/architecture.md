@@ -28,16 +28,18 @@ Applied to: Dev OU
 
 **Guardrails:**
 
-- Restrict to us-east-1 region only
 - Allow only cost-effective EC2 instances (t2, t3, t3a, t4g families)
 - Allow only cost-effective RDS instances (db.t2, db.t3, db.t4g families)
 - Prevent leaving organization
 - Block root user actions
 - Prevent CloudTrail deletion/modification
 - Block Reserved Instance purchases
+- Block admin policy attachment
 
 **Purpose:** Enable developers to experiment while maintaining cost
-controls and security guardrails.
+controls and security guardrails. Region restriction is handled by the
+org-root RegionRestriction SCP to avoid conflicting with global service
+exemptions.
 
 ### ProtectSSOTrustedAccess
 
@@ -52,6 +54,25 @@ Applied to: Organization root
 
 **Purpose:** Prevent accidental or malicious disabling of IAM Identity
 Center (SSO) trusted access, which would break SSO for all accounts.
+
+### RegionRestriction
+
+Applied to: Organization root
+
+**Guardrails:**
+
+- Deny all actions outside `us-east-1` for all accounts
+- Exempt truly global services via `NotAction`: IAM, STS, Organizations,
+  Route 53, CloudFront, Shield, Global Accelerator, WAF Classic (global scope),
+  Billing, Cost Explorer, Budgets, Support, Health, Trusted Advisor,
+  Tag Editor, Marketplace, and S3 bucket listing
+- Regional services (ACM, KMS, WAFv2, etc.) are NOT exempted — they operate
+  within the allowed region only
+
+**Purpose:** Organization-wide region restriction that prevents any account
+from deploying resources in unapproved regions. Uses the `NotAction` pattern
+to exempt only services with global endpoints, ensuring regional services
+like KMS and ACM can only operate within allowed regions.
 
 ## IAM Strategy
 

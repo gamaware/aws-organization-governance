@@ -36,3 +36,16 @@ resource "aws_organizations_policy_attachment" "protect_sso_root" {
   policy_id = aws_organizations_policy.protect_sso.id
   target_id = data.aws_organizations_organization.org.roots[0].id
 }
+
+# Org root — Region restriction (all accounts)
+resource "aws_organizations_policy" "region_restriction" {
+  name        = "RegionRestriction"
+  description = "Restrict all accounts to approved AWS regions"
+  type        = "SERVICE_CONTROL_POLICY"
+  content     = file("${path.module}/policies/region-restriction.json")
+}
+
+resource "aws_organizations_policy_attachment" "region_restriction_root" {
+  policy_id = aws_organizations_policy.region_restriction.id
+  target_id = data.aws_organizations_organization.org.roots[0].id
+}

@@ -4,7 +4,8 @@ set -euo pipefail
 # Post-deployment validation via AWS CLI
 # Required env vars: ORG_ID, EXPECTED_ORG_ID, ROOT_ID, EXPECTED_DEV_OU,
 #                    DEV_SCP_ID, DEV_SCP_ARN, SSO_SCP_ID, SSO_SCP_ARN,
-#                    DEV_TAGGING_SCP_ID, DEV_TAGGING_SCP_ARN
+#                    DEV_TAGGING_SCP_ID, DEV_TAGGING_SCP_ARN,
+#                    REGION_SCP_ID, REGION_SCP_ARN
 
 fail() { echo "❌ $1"; exit 1; }
 pass() { echo "✅ $1"; }
@@ -46,8 +47,6 @@ POLICY_CONTENT=$(aws organizations describe-policy \
   --query 'Policy.Content' \
   --output text)
 
-echo "$POLICY_CONTENT" | grep -q "us-east-1" || fail "Region restriction not found"
-pass "Region restriction validated"
 echo "$POLICY_CONTENT" | grep -q "ec2:InstanceType" || fail "Instance type restriction not found"
 pass "Instance type restriction validated"
 echo "$POLICY_CONTENT" | grep -q "aws:PrincipalArn" || fail "Root user restriction not found"
@@ -113,6 +112,33 @@ echo "$TAGGING_CONTENT" | grep -q "iteso.mx" \
   || fail "ITESO email tag enforcement not found"
 pass "ITESO email tag enforcement validated"
 
+# --- Region Restriction SCP ---
+[ "$REGION_SCP_ID" = "" ] && fail "Could not get Region Restriction SCP ID"
+
+REGION_EXISTS=$(aws organizations describe-policy \
+  --policy-id "$REGION_SCP_ID" \
+  --query 'Policy.PolicySummary.Id' \
+  --output text 2>/dev/null || echo "")
+[ "$REGION_EXISTS" = "" ] && fail "Region Restriction SCP not found in AWS"
+pass "Region Restriction SCP exists: ${REGION_SCP_ID}"
+
+REGION_ATTACHED=$(aws organizations list-policies-for-target \
+  --target-id "$ROOT_ID" \
+  --filter SERVICE_CONTROL_POLICY \
+  --query "Policies[?Id==\`${REGION_SCP_ID}\`].Id" \
+  --output text)
+[ "$REGION_ATTACHED" = "" ] && fail "Region Restriction SCP not attached to org root"
+pass "Region Restriction SCP attached to org root"
+
+REGION_CONTENT=$(aws organizations describe-policy \
+  --policy-id "$REGION_SCP_ID" \
+  --query 'Policy.Content' \
+  --output text)
+
+echo "$REGION_CONTENT" | grep -q "aws:RequestedRegion" \
+  || fail "Region condition not found in Region Restriction SCP"
+pass "Region restriction condition validated"
+
 echo ""
 echo "✅ All validations passed!"
 echo "📊 Deployment Summary:"
@@ -122,4 +148,5 @@ echo "  - Dev OU: ${EXPECTED_DEV_OU}"
 echo "  - Dev SCP: ${DEV_SCP_ID} (${DEV_SCP_ARN})"
 echo "  - Tagging SCP: ${DEV_TAGGING_SCP_ID} (${DEV_TAGGING_SCP_ARN})"
 echo "  - SSO Protection SCP: ${SSO_SCP_ID} (${SSO_SCP_ARN})"
+echo "  - Region Restriction SCP: ${REGION_SCP_ID} (${REGION_SCP_ARN})"
 echo "  - Status: Deployed and validated"
