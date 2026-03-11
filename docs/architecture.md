@@ -139,7 +139,7 @@ like KMS and ACM can only operate within allowed regions.
 graph TB
     subgraph "Local Development"
         A[Feature Branch] --> B[Make Changes]
-        B --> C[Pre-commit Hooks - 25+ checks]
+        B --> C[Pre-commit Hooks - 26 checks]
         C --> D[Push Branch]
     end
 
@@ -208,7 +208,7 @@ terraform {
 
 ### Defense in Depth
 
-#### 1. Pre-commit Hooks (Local — 25+ hooks)
+#### 1. Pre-commit Hooks (Local — 26 hooks)
 
 - Terraform fmt, validate, tflint, terrascan
 - Secret detection: detect-secrets, detect-private-key, gitleaks
