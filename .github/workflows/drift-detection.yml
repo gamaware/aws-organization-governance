@@ -6,10 +6,15 @@ on:
     - cron: '0 9 * * *'
   workflow_dispatch:
 
+concurrency:
+  group: terraform-state
+  cancel-in-progress: false
+
 jobs:
   detect-drift:
     name: Detect Configuration Drift
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       id-token: write
       contents: read

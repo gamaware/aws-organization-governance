@@ -161,14 +161,14 @@ aws sts get-caller-identity
 ## Development Workflow
 
 ```text
-Feature branch → PR → Checks pass → Merge → Auto plan → Manual apply
+Feature branch → PR → Checks pass → Merge → Auto plan → Approve → Auto apply
 ```
 
 1. Create feature branch, make changes, commit (pre-commit hooks run)
 2. Push and create PR — automated checks: lint, security scan, plan preview
-3. CodeRabbit provides AI-powered code review
-4. Merge to main — plan runs automatically
-5. Review plan, then manually trigger apply via Actions → Terraform CI/CD
+3. CodeRabbit + Copilot provide AI-powered code review
+4. Merge to main — plan runs automatically, apply job pauses at environment gate
+5. Click "Review deployments" → Approve → apply runs using the same plan (no re-run)
 
 ## CI/CD Pipeline
 
@@ -176,7 +176,7 @@ Feature branch → PR → Checks pass → Merge → Auto plan → Manual apply
 
 | Workflow | Trigger | Purpose |
 | --- | --- | --- |
-| `terraform-cicd.yml` | PR, push to main, manual | Plan/apply/destroy with post-deploy and post-destroy validation |
+| `terraform-cicd.yml` | Push to main, manual | Plan → environment approval → apply (artifact reuse), manual destroy |
 | `terraform-pr.yml` | PR | Lint (fmt, tflint), security (checkov), plan |
 | `quality-checks.yml` | PR, push to main | Markdownlint, shellcheck, yamllint, zizmor, structure validation |
 | `security.yml` | PR, push to main | Semgrep SAST, Trivy IaC scanning |
@@ -200,7 +200,7 @@ See [GitHub OIDC Setup Guide](docs/github-oidc-setup.md).
 | Pre-commit (local) | 25+ hooks — formatting, validation, security, linting |
 | PR checks (CI) | TFLint, Checkov, plan, quality checks, security scanning, CodeRabbit + Copilot AI review |
 | Branch protection | PR required, status checks must pass, no direct pushes |
-| Deployment gate | Manual trigger for apply/destroy |
+| Deployment gate | `production` environment with required reviewer approval |
 | Post-deploy validation | AWS CLI checks — SCPs exist, attached correctly, content verified |
 | Post-destroy validation | AWS CLI checks — SCPs removed, no orphaned policies |
 | Drift detection | Daily scheduled plan, auto-creates issue on drift |

@@ -10,11 +10,17 @@ on:
       - '.github/workflows/terraform-pr.yml'
       - '.github/actions/lint-and-security-composite/**'
       - '.github/actions/terraform-composite/**'
+      - '.github/scripts/**'
+
+concurrency:
+  group: terraform-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   lint-and-security:
     name: Lint and Security Scan
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -31,6 +37,7 @@ jobs:
   terraform-plan:
     name: Terraform Plan
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: lint-and-security
     permissions:
       id-token: write

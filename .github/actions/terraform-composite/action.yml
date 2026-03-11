@@ -28,12 +28,20 @@ runs:
       with:
         role-to-assume: ${{ inputs.aws_role_arn }}
         aws-region: ${{ inputs.aws_region }}
-        role-session-name: GitHubActions-Terraform
+        role-session-name: GitHubActions-Terraform-${{ github.run_id }}
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:
         terraform_version: ${{ inputs.terraform_version }}
+
+    - name: Cache Terraform providers
+      uses: actions/cache@v4
+      with:
+        path: ${{ inputs.working_directory }}/.terraform/providers
+        key: terraform-providers-${{ runner.os }}-${{ hashFiles(format('{0}/.terraform.lock.hcl', inputs.working_directory)) }}
+        restore-keys: |
+          terraform-providers-${{ runner.os }}-
 
     - name: Terraform Init
       shell: bash
@@ -68,6 +76,72 @@ runs:
           ${{ inputs.working_directory }}/plan.txt
         retention-days: 1
 
+    - name: Comment Plan on PR
+      if: inputs.terraform_command == 'plan' && github.event_name == 'pull_request'
+      continue-on-error: true
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const planPath = '${{ inputs.working_directory }}/plan.txt';
+          let planOutput = '';
+          try {
+            planOutput = fs.readFileSync(planPath, 'utf8');
+          } catch (e) {
+            planOutput = 'Plan output not available.';
+          }
+
+          // Truncate if too long (GitHub comment limit is 65536 chars)
+          const maxLen = 60000;
+          if (planOutput.length > maxLen) {
+            planOutput = planOutput.substring(0, maxLen) + '\n\n... (truncated)';
+          }
+
+          const body = [
+            '### Terraform Plan Output',
+            '',
+            '<details>',
+            '<summary>Click to expand plan</summary>',
+            '',
+            '```terraform',
+            planOutput,
+            '```',
+            '',
+            '</details>',
+            '',
+            `*Workflow: \`${{ github.workflow }}\` | Run: [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})*`,
+          ].join('\n');
+
+          // Paginate to find existing bot comment
+          const comments = await github.paginate(
+            github.rest.issues.listComments,
+            {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            }
+          );
+
+          const botComment = comments.find(c =>
+            c.user.type === 'Bot' && c.body.includes('### Terraform Plan Output')
+          );
+
+          if (botComment) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+              body,
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+          }
+
     - name: Download Plan Artifact
       if: inputs.terraform_command == 'apply'
       uses: actions/download-artifact@v4
@@ -80,6 +154,37 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working_directory }}
       run: terraform apply -auto-approve tfplan
+
+    - name: Terraform Destroy Plan Preview
+      if: inputs.terraform_command == 'destroy'
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        set +e
+        terraform plan -destroy -detailed-exitcode -no-color 2>&1 | tee destroy-plan.txt
+        EXIT_CODE=$?
+        set -e
+
+        {
+          echo "## Terraform Destroy Plan Preview"
+          echo ""
+          if [ "$EXIT_CODE" -eq 0 ]; then
+            echo "✅ **No resources to destroy.** Infrastructure is clean."
+          elif [ "$EXIT_CODE" -eq 2 ]; then
+            DESTROY_COUNT=$(grep -c "will be destroyed" destroy-plan.txt || true)
+            echo "⚠️ **$DESTROY_COUNT resource(s) will be destroyed.**"
+            echo ""
+            echo "| Resource |"
+            echo "| -------- |"
+            grep "will be destroyed" destroy-plan.txt \
+              | sed 's/^.*# //' | sed 's/ will be destroyed//' \
+              | while IFS= read -r line; do echo "| \`$line\` |"; done
+          else
+            echo "❌ **Destroy plan failed.** Check the logs."
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        if [ "$EXIT_CODE" -eq 1 ]; then exit 1; fi
 
     - name: Terraform Destroy
       if: inputs.terraform_command == 'destroy'

@@ -33,7 +33,7 @@ runs:
       with:
         role-to-assume: ${{ inputs.aws_role_arn }}
         aws-region: ${{ inputs.aws_region }}
-        role-session-name: GitHubActions-DriftDetection
+        role-session-name: GitHubActions-DriftDetection-${{ github.run_id }}
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
