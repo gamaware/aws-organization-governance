@@ -23,9 +23,10 @@ or unauthorized changes.
 - **Destroy** is manual only via `workflow_dispatch`. Runs
   `terraform plan -destroy` preview, pauses at environment gate, then
   destroys on approval.
-- **Concurrency controls** ensure all terraform workflows share a single
-  concurrency group (`terraform-state`) to prevent parallel state
-  operations.
+- **Concurrency controls** ensure deployment workflows (CI/CD, drift
+  detection) share a single concurrency group (`terraform-state`) to
+  prevent parallel state operations. PR workflows use a separate
+  per-PR group with cancel-in-progress for stale checks.
 - **Post-deploy validation** verifies SCPs exist, are attached to correct
   targets, and contain expected policy content via AWS CLI.
 - **Post-destroy validation** confirms no orphaned SCPs remain.
@@ -43,4 +44,5 @@ or unauthorized changes.
 - Drift is detected within 24 hours and tracked as a GitHub issue.
 - Validation catches deployment failures that Terraform exit codes miss
   (e.g., SCP created but not attached correctly).
-- Shared concurrency group prevents state corruption from parallel runs.
+- Shared concurrency group on deployment workflows prevents state
+  corruption from parallel runs.

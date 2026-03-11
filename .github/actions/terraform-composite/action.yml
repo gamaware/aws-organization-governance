@@ -161,7 +161,7 @@ runs:
       working-directory: ${{ inputs.working_directory }}
       run: |
         set +e
-        terraform plan -destroy -no-color 2>&1 | tee destroy-plan.txt
+        terraform plan -destroy -detailed-exitcode -no-color 2>&1 | tee destroy-plan.txt
         EXIT_CODE=$?
         set -e
 
