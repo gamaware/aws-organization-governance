@@ -1,5 +1,19 @@
 # AWS Organization Architecture
 
+## Architecture Diagrams
+
+### SCP Architecture
+
+![SCP Architecture](aws-org-governance-architecture.png)
+
+### CI/CD Pipeline Flow
+
+![CI/CD Pipeline Flow](cicd-pipeline-flow.png)
+
+### Defense in Depth Layers
+
+![Defense in Depth Layers](defense-in-depth.png)
+
 ## Organization Structure
 
 ```text
@@ -117,7 +131,7 @@ like KMS and ACM can only operate within allowed regions.
 - **Linting:** TFLint with terraform + AWS rulesets (preset=all)
 - **Security:** Checkov, terrascan, detect-secrets, gitleaks
 - **CI/CD:** GitHub Actions with composite actions
-- **Code Review:** CodeRabbit AI
+- **Code Review:** CodeRabbit AI + GitHub Copilot
 
 ### CI/CD Workflow
 
@@ -125,17 +139,18 @@ like KMS and ACM can only operate within allowed regions.
 graph TB
     subgraph "Local Development"
         A[Feature Branch] --> B[Make Changes]
-        B --> C[Pre-commit Hooks - 22 checks]
+        B --> C[Pre-commit Hooks - 25+ checks]
         C --> D[Push Branch]
     end
 
     subgraph "Pull Request"
         D --> E[Create PR]
         E --> F1[Lint: fmt + tflint]
-        E --> F2[Security: Checkov]
+        E --> F2[Security: Checkov + Semgrep + Trivy]
         E --> F3[Plan Preview]
-        E --> F4[CodeRabbit AI Review]
-        F1 & F2 & F3 & F4 --> G{Checks Pass?}
+        E --> F4[AI Review: CodeRabbit + Copilot]
+        E --> F5[Quality: markdownlint + shellcheck + yamllint]
+        F1 & F2 & F3 & F4 & F5 --> G{Checks Pass?}
         G -->|No| H[Fix Issues]
         H --> B
         G -->|Yes| I[Review & Approve]
@@ -147,19 +162,24 @@ graph TB
     end
 
     subgraph "Deployment"
-        K --> L{Manual Trigger}
-        L -->|apply| M[Deploy Changes]
-        M --> N[Post-Deploy Validation]
-        N --> O[Infrastructure Updated]
-        L -->|destroy| P[Destroy Resources]
-        P --> Q[Post-Destroy Validation]
-        Q --> R[Resources Removed]
+        K --> L[Save Plan Artifact]
+        L --> M{Production Environment Gate}
+        M -->|Approved| N[Apply Using Saved Plan]
+        N --> O[Post-Deploy Validation]
+        O --> P[Infrastructure Updated]
+    end
+
+    subgraph "Destroy Flow - Manual Dispatch"
+        Q[workflow_dispatch] --> R[Destroy Plan Preview]
+        R --> S{Production Environment Gate}
+        S -->|Approved| T[Terraform Destroy]
+        T --> U[Post-Destroy Validation]
     end
 
     subgraph "Continuous Monitoring"
-        S[Daily: Drift Detection] -->|Drift found| T[Create GitHub Issue]
-        U[Weekly: Dependabot] --> E
-        V[Weekly: Pre-commit Update] --> E
+        V[Daily: Drift Detection] -->|Drift found| W[Create GitHub Issue]
+        X[Weekly: Dependabot] --> E
+        Y[Weekly: Pre-commit Update] --> E
     end
 ```
 
@@ -188,7 +208,7 @@ terraform {
 
 ### Defense in Depth
 
-#### 1. Pre-commit Hooks (Local — 22 hooks)
+#### 1. Pre-commit Hooks (Local — 25+ hooks)
 
 - Terraform fmt, validate, tflint, terrascan
 - Secret detection: detect-secrets, detect-private-key, gitleaks
@@ -198,20 +218,25 @@ terraform {
 
 #### 2. PR Checks (CI)
 
-- Lint and security composite: terraform fmt, tflint, checkov
+- Lint and security: terraform fmt, tflint, checkov
+- Quality checks: markdownlint, shellcheck, yamllint, zizmor
+- Security scanning: Semgrep SAST, Trivy IaC
 - Terraform plan preview
-- CodeRabbit AI-powered code review
+- AI code review: CodeRabbit + GitHub Copilot
 
 #### 3. Branch Protection
 
-- Requires PR approval
-- Status checks must pass
+- Requires PR approval (CODEOWNERS enforced)
+- Required status checks (strict — branch must be up to date)
+- Required conversation resolution
+- Required linear history
 - No direct commits to main
 
 #### 4. Deployment Gate
 
-- Manual trigger for apply/destroy
-- Plan review before apply
+- `production` environment with required reviewer approval
+- Plan artifact saved and reused for apply (no re-plan)
+- Destroy requires manual `workflow_dispatch` plus environment approval
 
 #### 5. Post-Deployment Validation
 
