@@ -44,7 +44,7 @@ pre-commit install --hook-type commit-msg
 pre-commit run --all-files
 ```
 
-**Pre-commit checks (22 hooks):**
+**Pre-commit checks (26 hooks):**
 
 - **Formatting:** trailing-whitespace, end-of-file-fixer,
   terraform\_fmt, markdownlint
@@ -205,6 +205,16 @@ See [GitHub OIDC Setup Guide](docs/github-oidc-setup.md).
 | Post-destroy validation | AWS CLI checks — SCPs removed, no orphaned policies |
 | Drift detection | Daily scheduled plan, auto-creates issue on drift |
 | Automated updates | Dependabot + pre-commit autoupdate |
+
+## Architecture Diagrams
+
+| Diagram | Description |
+| --- | --- |
+| [SCP Architecture](docs/aws-org-governance-architecture.png) | Organization hierarchy, SCP attachments, OIDC auth flow |
+| [CI/CD Pipeline](docs/cicd-pipeline-flow.png) | PR checks, environment gate, apply/destroy/drift flows |
+| [Defense in Depth](docs/defense-in-depth.png) | 6 security layers from local hooks to continuous monitoring |
+
+See [Architecture](docs/architecture.md) for full details.
 
 ## Quick Links
 

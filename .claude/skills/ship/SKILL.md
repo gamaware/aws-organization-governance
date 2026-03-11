@@ -72,6 +72,40 @@ For each review comment:
 3. If the comment is valid, fix the issue, commit, and push.
 4. After fixing, re-monitor CI (return to Phase 3).
 
+After all fixes are pushed and the incremental review passes, resolve
+stale CodeRabbit threads in bulk:
+
+```bash
+gh pr comment <number> --body "@coderabbitai resolve"
+```
+
+For Copilot and any remaining unresolved threads, resolve via GraphQL:
+
+```bash
+# Get all unresolved thread IDs
+gh api graphql -f query='
+  { repository(owner: "gamaware", name: "aws-organization-governance") {
+    pullRequest(number: <NUMBER>) {
+      reviewThreads(first: 100) {
+        nodes { id isResolved }
+      }
+    }
+  }}'
+```
+
+Then for each unresolved thread ID:
+
+```bash
+gh api graphql -f query='
+  mutation { resolveReviewThread(input: {threadId: "<ID>"}) {
+    thread { isResolved }
+  }}'
+```
+
+Copilot auto re-reviews on push ("Review new pushes" ruleset is enabled),
+but may duplicate previously resolved comments. After the final review
+passes, resolve all remaining threads in bulk.
+
 ## Phase 5 — Merge
 
 Once ALL of the following are true:
@@ -102,4 +136,12 @@ Report the merge commit and confirm the branch was deleted.
 - SKIP=zizmor is acceptable for pre-existing zizmor warnings during commit.
 - CodeRabbit may hit hourly rate limits — wait and retry.
 - Copilot comments may be stale after fix commits — verify current file state.
+- Copilot auto re-reviews on push ("Review new pushes" ruleset is enabled).
+- Copilot may duplicate comments on re-review — even for resolved issues.
+- CodeRabbit auto-reviews incrementally on every push (up to 5 commits,
+  then pauses). Use `@coderabbitai review` to resume after pause.
+- CodeRabbit does NOT auto-resolve its threads — use `@coderabbitai resolve`
+  after fixes are confirmed.
+- Neither reviewer auto-resolves threads. Use `@coderabbitai resolve` for
+  CodeRabbit and GraphQL `resolveReviewThread` for Copilot/all threads.
 - Use `--admin` to bypass branch protection for merge.
