@@ -92,6 +92,7 @@ All hooks must pass before committing. Install with `pre-commit install`.
   terraform\_docs, terrascan, terraform\_checkov.
 - **Shell**: shellcheck (severity: warning), shellharden.
 - **Markdown**: markdownlint with `--fix`.
+- **Prose**: Vale with write-good (passive voice, weasel words) and proselint (grammar, usage).
 - **GitHub Actions**: actionlint, zizmor (security analysis).
 - **Commits**: conventional-pre-commit (commit-msg stage).
 
@@ -165,8 +166,8 @@ Weekly auto-update of pre-commit hook versions via PR.
 
 ### quality-checks.yml
 
-Runs on every PR and push to main — markdownlint, shellcheck, yamllint, zizmor,
-file structure validation, README quality check.
+Runs on every PR and push to main — markdownlint, link checking, shellcheck, yamllint,
+zizmor, file structure validation, README quality check, Vale (prose linting).
 
 ### security.yml
 

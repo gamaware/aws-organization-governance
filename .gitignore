@@ -1,3 +1,6 @@
+# Vale styles (downloaded via vale sync)
+styles/
+
 # Terraform
 *.tfstate
 *.tfstate.*

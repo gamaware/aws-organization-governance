@@ -7,6 +7,24 @@ on:
     branches: [main]
 
 jobs:
+  link-checker:
+    name: Check Links
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Check markdown links
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          config-file: '.markdown-link-check.json'
+          use-quiet-mode: 'yes'
+        continue-on-error: true
+
   markdown-lint:
     name: Markdown Linting
     runs-on: ubuntu-latest
@@ -153,3 +171,27 @@ jobs:
 
       - name: Run zizmor
         run: zizmor .github/workflows/
+
+  prose-lint:
+    name: Prose Linting (Vale)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install Vale
+        run: |
+          VALE_VERSION="3.13.1"
+          wget -q "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz"
+          tar xzf "vale_${VALE_VERSION}_Linux_64-bit.tar.gz" -C /usr/local/bin vale
+
+      - name: Run Vale
+        run: |
+          vale sync
+          find . -name '*.md' -not -path './styles/*' -not -path './.git/*' \
+            -not -path './terraform/scps/README.md' -not -path './.kiro/*' \
+            -exec vale {} +
