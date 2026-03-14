@@ -16,6 +16,11 @@ inputs:
     description: 'Expected Dev OU ID'
     required: true
 
+outputs:
+  validation_log:
+    description: 'Validation script output for downstream steps'
+    value: ${{ steps.validate.outputs.validation_log }}
+
 runs:
   using: 'composite'
   steps:
@@ -26,6 +31,7 @@ runs:
       run: ${{ github.workspace }}/.github/scripts/get-terraform-outputs.sh
 
     - name: Validate Deployment
+      id: validate
       shell: bash
       env:
         ORG_ID: ${{ steps.outputs.outputs.org_id }}
@@ -40,4 +46,10 @@ runs:
         DEV_TAGGING_SCP_ARN: ${{ steps.outputs.outputs.dev_tagging_scp_arn }}
         REGION_SCP_ID: ${{ steps.outputs.outputs.region_scp_id }}
         REGION_SCP_ARN: ${{ steps.outputs.outputs.region_scp_arn }}
-      run: ${{ github.workspace }}/.github/scripts/validate-deployment.sh
+      run: |
+        LOG=$(${{ github.workspace }}/.github/scripts/validate-deployment.sh 2>&1 | tee /dev/stderr)
+        {
+          echo 'validation_log<<VALIDATION_EOF'
+          echo "$LOG"
+          echo 'VALIDATION_EOF'
+        } >> "$GITHUB_OUTPUT"

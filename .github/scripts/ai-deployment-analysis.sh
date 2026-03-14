@@ -4,21 +4,25 @@ set -euo pipefail
 # AI-powered post-deployment analysis using Claude via Amazon Bedrock
 # Runs after deterministic validation passes
 # Required env vars: WORKING_DIRECTORY
+# Optional env vars: BEDROCK_MODEL_ID, VALIDATION_LOG
 
 echo "🤖 Running AI deployment analysis..."
 
-# Gather all SCP policy content
+BEDROCK_MODEL_ID="${BEDROCK_MODEL_ID:-us.anthropic.claude-sonnet-4-6-v1}"
+
+# Gather all SCP policy content (truncated to 50K total)
 POLICIES=""
 for policy_file in "$WORKING_DIRECTORY"/policies/*.json; do
   if [ -f "$policy_file" ]; then
     FILENAME=$(basename "$policy_file")
-    CONTENT=$(cat "$policy_file")
+    CONTENT=$(< "$policy_file")
     POLICIES="${POLICIES}
 --- ${FILENAME} ---
 ${CONTENT}
 "
   fi
 done
+POLICIES=$(printf '%s' "$POLICIES" | head -c 50000)
 
 # Gather Terraform plan output if available
 PLAN_OUTPUT=""
@@ -28,12 +32,13 @@ fi
 
 # Gather validation results from deterministic script
 VALIDATION_LOG="${VALIDATION_LOG:-No validation log available}"
+VALIDATION_LOG=$(printf '%s' "$VALIDATION_LOG" | head -c 10000)
 
 # Gather live SCP list from AWS
 LIVE_SCPS=$(aws organizations list-policies \
   --filter SERVICE_CONTROL_POLICY \
   --query 'Policies[].{Id:Id,Name:Name,Description:Description}' \
-  --output json 2>/dev/null || echo "[]")
+  --output json || echo "[]")
 
 # Build the prompt
 PROMPT="You are a cloud security expert analyzing an AWS Organizations deployment.
@@ -85,19 +90,24 @@ Analyze the deployment and provide a structured report:
 
 Keep the analysis concise and actionable. Focus on real issues, not theoretical edge cases."
 
+# Write prompt to temp file for Bedrock CLI (avoids shell escaping issues)
+BODY_FILE=$(mktemp)
+trap 'rm -f "$BODY_FILE"' EXIT
+jq -n \
+  --arg prompt "$PROMPT" \
+  '{
+    "anthropic_version": "bedrock-2023-05-31",
+    "max_tokens": 4096,
+    "messages": [{"role": "user", "content": $prompt}]
+  }' > "$BODY_FILE"
+
 # Call Bedrock Claude via AWS CLI
 RESPONSE=$(aws bedrock-runtime invoke-model \
-  --model-id us.anthropic.claude-sonnet-4-6-v1 \
+  --model-id "$BEDROCK_MODEL_ID" \
   --content-type application/json \
   --accept application/json \
-  --body "$(jq -n \
-    --arg prompt "$PROMPT" \
-    '{
-      "anthropic_version": "bedrock-2023-05-31",
-      "max_tokens": 4096,
-      "messages": [{"role": "user", "content": $prompt}]
-    }')" \
-  /dev/stdout 2>/dev/null)
+  --body "fileb://$BODY_FILE" \
+  /dev/stdout)
 
 # Extract the text content
 ANALYSIS=$(echo "$RESPONSE" | jq -r '.content[0].text // "Analysis not available"')
@@ -109,7 +119,7 @@ ANALYSIS=$(echo "$RESPONSE" | jq -r '.content[0].text // "Analysis not available
   echo "$ANALYSIS"
   echo ""
   echo "---"
-  echo "*Powered by Claude Sonnet 4.6 via Amazon Bedrock*"
+  echo "*Powered by Claude via Amazon Bedrock (${BEDROCK_MODEL_ID})*"
 } >> "$GITHUB_STEP_SUMMARY"
 
 echo "✅ AI analysis complete — see step summary for details"
