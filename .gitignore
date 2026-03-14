@@ -26,6 +26,9 @@ override.tf.json
 # Logs
 *.log
 
+# AI analysis output (generated at deploy time, uploaded as artifact)
+ai-analysis.md
+
 # Python
 __pycache__/
 *.pyc

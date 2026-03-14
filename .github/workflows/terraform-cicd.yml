@@ -97,6 +97,14 @@ jobs:
           BEDROCK_MODEL_ID: us.anthropic.claude-sonnet-4-6
         run: ${{ github.workspace }}/.github/scripts/ai-deployment-analysis.sh
 
+      - name: Upload AI Analysis
+        if: always() && hashFiles('terraform/scps/ai-analysis.md') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-deployment-analysis
+          path: terraform/scps/ai-analysis.md
+          retention-days: 30
+
   terraform-destroy:
     name: Terraform Destroy
     runs-on: ubuntu-latest

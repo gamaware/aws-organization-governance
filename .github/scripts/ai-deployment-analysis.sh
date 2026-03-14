@@ -94,6 +94,7 @@ Keep the analysis concise and actionable. Focus on real issues, not theoretical 
 BODY_FILE=$(mktemp)
 RESPONSE_FILE=$(mktemp)
 trap 'rm -f "$BODY_FILE" "$RESPONSE_FILE"' EXIT
+
 jq -n \
   --arg prompt "$PROMPT" \
   '{
@@ -114,7 +115,8 @@ aws bedrock-runtime invoke-model \
 # Extract the text content
 ANALYSIS=$(jq -r '.content[0].text // "Analysis not available"' "$RESPONSE_FILE")
 
-# Post to GitHub Actions step summary
+# Save analysis to file for artifact upload
+ANALYSIS_FILE="${WORKING_DIRECTORY}/ai-analysis.md"
 {
   echo "## 🤖 AI Deployment Analysis"
   echo ""
@@ -122,6 +124,9 @@ ANALYSIS=$(jq -r '.content[0].text // "Analysis not available"' "$RESPONSE_FILE"
   echo ""
   echo "---"
   echo "*Powered by Claude via Amazon Bedrock (${BEDROCK_MODEL_ID})*"
-} >> "$GITHUB_STEP_SUMMARY"
+} > "$ANALYSIS_FILE"
 
-echo "✅ AI analysis complete — see step summary for details"
+# Post to GitHub Actions step summary
+cat "$ANALYSIS_FILE" >> "$GITHUB_STEP_SUMMARY"
+
+echo "✅ AI analysis complete — see step summary and artifact for details"
