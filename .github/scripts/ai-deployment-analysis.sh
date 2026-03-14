@@ -8,7 +8,7 @@ set -euo pipefail
 
 echo "🤖 Running AI deployment analysis..."
 
-BEDROCK_MODEL_ID="${BEDROCK_MODEL_ID:-us.anthropic.claude-sonnet-4-6-v1}"
+BEDROCK_MODEL_ID="${BEDROCK_MODEL_ID:-us.anthropic.claude-sonnet-4-6}"
 
 # Gather all SCP policy content (truncated to 50K total)
 POLICIES=""
