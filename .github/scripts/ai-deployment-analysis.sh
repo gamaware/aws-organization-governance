@@ -123,7 +123,7 @@ ANALYSIS_FILE="${WORKING_DIRECTORY}/ai-analysis.md"
   echo "$ANALYSIS"
   echo ""
   echo "---"
-  echo "*Powered by Claude via Amazon Bedrock (${BEDROCK_MODEL_ID})*"
+  echo "*Powered by Claude via Amazon Bedrock ($BEDROCK_MODEL_ID)*"
 } > "$ANALYSIS_FILE"
 
 # Post to GitHub Actions step summary
