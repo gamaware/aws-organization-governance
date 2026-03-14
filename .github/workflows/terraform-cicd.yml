@@ -94,7 +94,7 @@ jobs:
         env:
           WORKING_DIRECTORY: terraform/scps
           VALIDATION_LOG: ${{ steps.validation.outputs.validation_log }}
-          BEDROCK_MODEL_ID: us.anthropic.claude-sonnet-4-6-v1
+          BEDROCK_MODEL_ID: us.anthropic.claude-sonnet-4-6
         run: ${{ github.workspace }}/.github/scripts/ai-deployment-analysis.sh
 
   terraform-destroy:
