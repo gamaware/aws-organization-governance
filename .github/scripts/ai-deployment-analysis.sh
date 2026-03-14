@@ -68,20 +68,21 @@ ${VALIDATION_LOG}
 
 ## Previously Triaged Findings
 
-The following findings have already been reviewed and triaged. Do NOT re-report
-any finding that matches an entry below (fixed, accepted risk, won't fix, or to fix).
-Only report genuinely NEW findings not covered here.
+The following findings have already been reviewed and triaged.
+Do NOT re-report findings listed as Accepted Risk, Won't Fix, or To Fix unless scope changed.
+If a finding listed under Fixed is present again, report it as a NEW regression.
+Only suppress findings that are still intentionally accepted or triaged.
 
 ${ACCEPTED_FINDINGS:-No previously triaged findings.}
 
 ## Analysis Instructions
 
 Compare the current SCP policies against the previously triaged findings above.
-Only report findings that are NEW — not already listed in any section of the
-triaged findings (Fixed, Accepted Risk, Won't Fix, or To Fix).
+Report NEW findings and regressions (including reintroduced items from Fixed).
+Do not repeat unresolved accepted triage items unless their impact materially changed.
 
 If all findings are already covered in the triaged list, respond with exactly:
-**No new findings.** All previously identified issues have been triaged.
+No new findings. All previously identified issues have been triaged.
 
 Otherwise, for each NEW finding provide:
 
