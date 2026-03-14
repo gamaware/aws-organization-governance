@@ -88,6 +88,12 @@ jobs:
           expected_org_id: ${{ vars.EXPECTED_ORG_ID }}
           expected_dev_ou: ${{ vars.TF_VAR_dev_ou_id }}
 
+      - name: AI Deployment Analysis
+        continue-on-error: true
+        env:
+          WORKING_DIRECTORY: terraform/scps
+        run: ${{ github.workspace }}/.github/scripts/ai-deployment-analysis.sh
+
   terraform-destroy:
     name: Terraform Destroy
     runs-on: ubuntu-latest

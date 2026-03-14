@@ -147,6 +147,7 @@ Hooks in `.claude/settings.json` automate deterministic actions:
 
 Main pipeline — push to main triggers plan → apply pauses at `production`
 environment gate → reviewer approves → apply uses saved plan artifact (no re-plan).
+After apply, deterministic validation runs followed by AI analysis via Bedrock.
 Destroy is manual only via `workflow_dispatch` with `plan -destroy` preview.
 Concurrency group (`terraform-state`) prevents simultaneous Terraform runs.
 

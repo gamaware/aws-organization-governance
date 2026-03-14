@@ -20,6 +20,7 @@ BODY="## ⚠️ Configuration Drift Detected
 
 \`\`\`terraform
 $(head -c 60000 "$PLAN_FILE")
+$(if [ "$(wc -c < "$PLAN_FILE")" -gt 60000 ]; then echo "... (truncated, see full output in workflow run)"; fi)
 \`\`\`
 
 </details>
