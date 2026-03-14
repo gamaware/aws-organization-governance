@@ -196,7 +196,7 @@ aws iam put-role-policy \
         ],
         "Resource": [
           "arn:aws:bedrock:us-east-1::foundation-model/anthropic.*",
-          "arn:aws:bedrock:us-east-1::inference-profile/us.anthropic.*"
+          "arn:aws:bedrock:us-east-1:*:inference-profile/us.anthropic.*"
         ]
       }
     ]

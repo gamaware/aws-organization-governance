@@ -1,5 +1,18 @@
 # Prerequisites
 
+This page covers one-time AWS and GitHub setup required before deploying.
+Follow these guides in order:
+
+| Step | Guide | What it does |
+| --- | --- | --- |
+| 1 | [Enable SCPs](#enable-service-control-policies) (below) | Enable SCP policy type on the organization |
+| 2 | [GitHub OIDC Setup](github-oidc-setup.md) | OIDC provider, IAM role, SCP/S3/Bedrock policies, GitHub secret |
+| 3 | [GitHub Variables Setup](github-variables-setup.md) | Set org ID, OU ID, and region as GitHub Actions variables |
+| 4 | [Local Development](../README.md#local-development-setup) | tfenv, pre-commit hooks, AWS credentials |
+
+After completing all steps, push a Terraform change to main to trigger the
+full CI/CD pipeline.
+
 ## Enable Service Control Policies
 
 Before deploying SCPs with Terraform, you must enable the SCP policy type

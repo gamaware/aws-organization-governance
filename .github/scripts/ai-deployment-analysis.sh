@@ -92,7 +92,8 @@ Keep the analysis concise and actionable. Focus on real issues, not theoretical 
 
 # Write prompt to temp file for Bedrock CLI (avoids shell escaping issues)
 BODY_FILE=$(mktemp)
-trap 'rm -f "$BODY_FILE"' EXIT
+RESPONSE_FILE=$(mktemp)
+trap 'rm -f "$BODY_FILE" "$RESPONSE_FILE"' EXIT
 jq -n \
   --arg prompt "$PROMPT" \
   '{
@@ -101,16 +102,17 @@ jq -n \
     "messages": [{"role": "user", "content": $prompt}]
   }' > "$BODY_FILE"
 
-# Call Bedrock Claude via AWS CLI
-RESPONSE=$(aws bedrock-runtime invoke-model \
+# Call Bedrock Claude via AWS CLI (120s timeout for large prompts)
+aws bedrock-runtime invoke-model \
   --model-id "$BEDROCK_MODEL_ID" \
   --content-type application/json \
   --accept application/json \
+  --cli-read-timeout 120 \
   --body "fileb://$BODY_FILE" \
-  /dev/stdout)
+  "$RESPONSE_FILE"
 
 # Extract the text content
-ANALYSIS=$(echo "$RESPONSE" | jq -r '.content[0].text // "Analysis not available"')
+ANALYSIS=$(jq -r '.content[0].text // "Analysis not available"' "$RESPONSE_FILE")
 
 # Post to GitHub Actions step summary
 {
