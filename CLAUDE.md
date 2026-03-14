@@ -151,8 +151,11 @@ environment gate → reviewer approves → apply uses saved plan artifact (no re
 After apply, deterministic validation runs followed by AI analysis via Bedrock.
 AI analysis output is uploaded as artifact `ai-deployment-analysis` (30-day retention).
 To review findings: `gh run download <RUN_ID> -n ai-deployment-analysis` then read
-`ai-analysis.md`. Destroy is manual only via `workflow_dispatch` with `plan -destroy`
-preview. Concurrency group (`terraform-state`) prevents simultaneous Terraform runs.
+`ai-analysis.md`. The AI prompt includes `terraform/scps/accepted-findings.md` so it
+skips previously triaged findings and only reports new issues. After reviewing new
+findings, triage them into the accepted findings file (fixed, accepted-risk, wont-fix,
+or to-fix). Destroy is manual only via `workflow_dispatch` with `plan -destroy` preview.
+Concurrency group (`terraform-state`) prevents simultaneous Terraform runs.
 
 ### terraform-pr.yml
 

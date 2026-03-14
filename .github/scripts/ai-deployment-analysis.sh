@@ -40,6 +40,13 @@ LIVE_SCPS=$(aws organizations list-policies \
   --query 'Policies[].{Id:Id,Name:Name,Description:Description}' \
   --output json || echo "[]")
 
+# Load accepted findings to avoid re-reporting known issues
+ACCEPTED_FINDINGS=""
+ACCEPTED_FILE="$WORKING_DIRECTORY/accepted-findings.md"
+if [ -f "$ACCEPTED_FILE" ]; then
+  ACCEPTED_FINDINGS=$(head -c 20000 "$ACCEPTED_FILE")
+fi
+
 # Build the prompt
 PROMPT="You are a cloud security expert analyzing an AWS Organizations deployment.
 
@@ -59,36 +66,41 @@ ${PLAN_OUTPUT:-No plan output available}
 
 ${VALIDATION_LOG}
 
+## Previously Triaged Findings
+
+The following findings have already been reviewed and triaged.
+Do NOT re-report findings listed as Accepted Risk, Won't Fix, or To Fix unless scope changed.
+If a finding listed under Fixed is present again, report it as a NEW regression.
+Only suppress findings that are still intentionally accepted or triaged.
+
+${ACCEPTED_FINDINGS:-No previously triaged findings.}
+
 ## Analysis Instructions
 
-Analyze the deployment and provide a structured report:
+Compare the current SCP policies against the previously triaged findings above.
+Report NEW findings and regressions (including reintroduced items from Fixed).
+Do not repeat unresolved accepted triage items unless their impact materially changed.
 
-### 1. Security Posture Assessment
-- Are there any permission escalation paths the deny statements miss?
-- Are the NotAction exemptions in the region restriction SCP complete for global services?
-- Could any SCP be bypassed via service-linked roles or other mechanisms?
+If all findings are already covered in the triaged list, respond with exactly:
+No new findings. All previously identified issues have been triaged.
 
-### 2. SCP Conflict Analysis
-- Are there any conflicting deny patterns between org-root and OU-level SCPs?
-- Does the union-deny model create any unintended blocks?
-- Are there any gaps where actions should be denied but are not?
+Otherwise, for each NEW finding provide:
 
-### 3. Best Practices Check
-- Are SCP Sids descriptive and following naming conventions?
-- Are conditions properly scoped (StringEquals vs StringLike)?
-- Are there any overly broad or overly narrow deny statements?
+### New Findings
 
-### 4. Recommendations
-- Any missing deny statements for common security threats?
-- Any global services missing from the NotAction region restriction list?
-- Any cost control gaps in the Dev OU restrictions?
+For each new finding:
+- **Severity**: HIGH / MEDIUM / LOW
+- **Category**: security-gap / bug / best-practice / cost-control
+- **Description**: What the issue is and why it matters
+- **Recommendation**: How to fix it
 
-### 5. Deployment Summary
+### Deployment Summary
 - What changed in this deployment
-- Overall security posture rating (Strong/Adequate/Needs Improvement)
-- Top 3 action items if any
+- Overall security posture rating (Strong / Adequate / Needs Improvement)
+- Whether any new action items were identified
 
-Keep the analysis concise and actionable. Focus on real issues, not theoretical edge cases."
+Keep the analysis concise and actionable. Focus on real issues, not theoretical edge cases.
+Do not repeat or rephrase findings already in the triaged list."
 
 # Write prompt to temp file for Bedrock CLI (avoids shell escaping issues)
 BODY_FILE=$(mktemp)
