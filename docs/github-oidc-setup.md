@@ -195,8 +195,8 @@ aws iam put-role-policy \
           "bedrock:InvokeModel"
         ],
         "Resource": [
-          "arn:aws:bedrock:us-east-1::foundation-model/anthropic.*",
-          "arn:aws:bedrock:us-east-1:*:inference-profile/us.anthropic.*"
+          "arn:aws:bedrock:*::foundation-model/anthropic.*",
+          "arn:aws:bedrock:*:*:inference-profile/us.anthropic.*"
         ]
       }
     ]
