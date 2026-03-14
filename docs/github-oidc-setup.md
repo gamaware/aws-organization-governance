@@ -176,7 +176,50 @@ aws iam get-role-policy \
   --policy-name TerraformStateAccess
 ```
 
-## Step 5: Add Role ARN to GitHub Secrets
+## Step 5: Add Inline Policy for Bedrock Access (AI Validation)
+
+The post-deployment AI analysis uses Claude via Amazon Bedrock. Add this
+inline policy to allow model invocation:
+
+```bash
+aws iam put-role-policy \
+  --role-name GitHubActions-<PROJECT_NAME> \
+  --policy-name BedrockModelAccess \
+  --policy-document '{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Sid": "AllowBedrockModelInvocation",
+        "Effect": "Allow",
+        "Action": [
+          "bedrock:InvokeModel"
+        ],
+        "Resource": [
+          "arn:aws:bedrock:us-east-1::foundation-model/anthropic.*",
+          "arn:aws:bedrock:us-east-1::inference-profile/us.anthropic.*"
+        ]
+      }
+    ]
+  }'
+```
+
+**Verify policy:**
+
+```bash
+aws iam get-role-policy \
+  --role-name GitHubActions-<PROJECT_NAME> \
+  --policy-name BedrockModelAccess
+```
+
+**Enable Claude model access in Bedrock:**
+
+1. Open the [Amazon Bedrock console](https://console.aws.amazon.com/bedrock/)
+2. Navigate to **Bedrock configurations** → **Model access**
+3. Select **Anthropic Claude Sonnet 4.6** (or the latest available model)
+4. Submit use case details if prompted (one-time per account)
+5. Access is granted immediately
+
+## Step 6: Add Role ARN to GitHub Secrets
 
 1. Get the role ARN:
 
@@ -201,7 +244,7 @@ Or via GitHub UI:
 1. Name: `AWS_ROLE_ARN`
 1. Value: `arn:aws:iam::<AWS_ACCOUNT_ID>:role/GitHubActions-<PROJECT_NAME>`
 
-## Step 6: Verify Setup
+## Step 7: Verify Setup
 
 Test the workflow:
 
@@ -225,6 +268,7 @@ The complete setup consists of:
    - Trust policy: Allows GitHub Actions from specific repository
    - Inline policy: `SCPManagement` (scoped Organizations access)
    - Inline policy: `TerraformStateAccess` (S3 bucket access)
+   - Inline policy: `BedrockModelAccess` (AI post-deploy analysis)
 
 3. **GitHub Secret:** `AWS_ROLE_ARN`
 

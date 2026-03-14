@@ -197,11 +197,12 @@ See [GitHub OIDC Setup Guide](docs/github-oidc-setup.md).
 
 | Layer | Mechanism |
 | --- | --- |
-| Pre-commit (local) | 25+ hooks — formatting, validation, security, linting |
+| Pre-commit (local) | 26 hooks — formatting, validation, security, linting |
 | PR checks (CI) | TFLint, Checkov, plan, quality checks, security scanning, CodeRabbit + Copilot AI review |
 | Branch protection | PR required, status checks must pass, no direct pushes |
 | Deployment gate | `production` environment with required reviewer approval |
 | Post-deploy validation | AWS CLI checks — SCPs exist, attached correctly, content verified |
+| AI deployment analysis | Claude via Bedrock — security posture, SCP conflicts, recommendations |
 | Post-destroy validation | AWS CLI checks — SCPs removed, no orphaned policies |
 | Drift detection | Daily scheduled plan, auto-creates issue on drift |
 | Automated updates | Dependabot + pre-commit autoupdate |

@@ -81,12 +81,21 @@ jobs:
           aws_region: ${{ vars.TF_VAR_aws_region }}
 
       - name: Post-Deployment Validation
+        id: validation
         uses: ./.github/actions/post-deploy-validation-composite
         with:
           working_directory: terraform/scps
           aws_region: ${{ vars.TF_VAR_aws_region }}
           expected_org_id: ${{ vars.EXPECTED_ORG_ID }}
           expected_dev_ou: ${{ vars.TF_VAR_dev_ou_id }}
+
+      - name: AI Deployment Analysis
+        continue-on-error: true
+        env:
+          WORKING_DIRECTORY: terraform/scps
+          VALIDATION_LOG: ${{ steps.validation.outputs.validation_log }}
+          BEDROCK_MODEL_ID: us.anthropic.claude-sonnet-4-6-v1
+        run: ${{ github.workspace }}/.github/scripts/ai-deployment-analysis.sh
 
   terraform-destroy:
     name: Terraform Destroy

@@ -74,7 +74,7 @@ runs:
         path: |
           ${{ inputs.working_directory }}/tfplan
           ${{ inputs.working_directory }}/plan.txt
-        retention-days: 1
+        retention-days: 3
 
     - name: Comment Plan on PR
       if: inputs.terraform_command == 'plan' && github.event_name == 'pull_request'
