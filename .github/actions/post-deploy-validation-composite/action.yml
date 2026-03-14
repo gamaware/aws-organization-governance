@@ -47,9 +47,25 @@ runs:
         REGION_SCP_ID: ${{ steps.outputs.outputs.region_scp_id }}
         REGION_SCP_ARN: ${{ steps.outputs.outputs.region_scp_arn }}
       run: |
-        LOG=$(${{ github.workspace }}/.github/scripts/validate-deployment.sh 2>&1 | tee /dev/stderr)
+        set +e
+        LOG_FILE="$(mktemp)"
+        ${{ github.workspace }}/.github/scripts/validate-deployment.sh 2>&1 | tee "$LOG_FILE" >&2
+        VALIDATE_EXIT="${PIPESTATUS[0]}"
+        set -e
+
+        MAX_CHARS=60000
+        if [ "$(wc -c < "$LOG_FILE")" -gt "$MAX_CHARS" ]; then
+          head -c "$MAX_CHARS" "$LOG_FILE" > "${LOG_FILE}.trunc"
+          printf '\n[...validation log truncated to %s chars...]\n' "$MAX_CHARS" >> "${LOG_FILE}.trunc"
+          mv "${LOG_FILE}.trunc" "$LOG_FILE"
+        fi
+
+        DELIM="VALIDATION_EOF_${RANDOM}_$(date +%s)"
         {
-          echo 'validation_log<<VALIDATION_EOF'
-          echo "$LOG"
-          echo 'VALIDATION_EOF'
+          echo "validation_log<<$DELIM"
+          cat "$LOG_FILE"
+          echo "$DELIM"
         } >> "$GITHUB_OUTPUT"
+
+        rm -f "$LOG_FILE"
+        exit "$VALIDATE_EXIT"
