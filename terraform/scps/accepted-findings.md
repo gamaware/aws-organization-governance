@@ -16,6 +16,10 @@ reports genuinely new issues.
 | Bedrock model ID wrong (`claude-sonnet-4-6-v1`) | Fixed to `us.anthropic.claude-sonnet-4-6` in PR #30 |
 | Cross-region IAM for Bedrock inference profiles | Wildcard region in IAM ARNs, PR #31 |
 | AI analysis not downloadable as artifact | Artifact upload added in PR #32 |
+| S3 tagging blocks all bucket creation | Moved tag enforcement from `CreateBucket` to `PutBucketTagging` |
+| RDS `StringNotLike` on absent condition key | Added `Null` check so deny only fires when class IS present |
+| RDS restore bypasses instance class controls | Added `Restore*` actions to `DenyCostlyRDSInstances` |
+| CloudTrail `PutEventSelectors` not denied | Added to `DenyCloudTrailDeletion` actions |
 
 ## Accepted Risk
 
@@ -34,6 +38,7 @@ reports genuinely new issues.
 | No EIP count limit via SCP | SCPs cannot count resources — use AWS Config rule instead |
 | No CloudWatch cost control for log ingestion | Out of scope for SCPs — use CloudWatch quotas |
 | No `lambda:UpdateFunctionCode` tag check | Tags enforced at create, update does not change resource cost profile |
+| S3 buckets can be created without tags | AWS limitation — `CreateBucket` does not support `aws:RequestTag`. Enforce via Config rule |
 
 ## Won't Fix
 
@@ -49,10 +54,6 @@ reports genuinely new issues.
 
 | Finding | Priority | Description |
 | --- | --- | --- |
-| S3 tagging blocks all bucket creation | P1 | `CreateBucket` does not accept tags, `Null` checks always fire |
-| RDS `StringNotLike` on absent condition key | P1 | `DenyModifyRDSToExpensiveClass` fires when `rds:DatabaseClass` absent |
-| RDS restore bypasses instance class controls | P2 | `Restore*` actions not covered by class restrictions |
-| CloudTrail `PutEventSelectors` not denied | P2 | Can disable logging without touching the trail |
 | `ec2:ModifyVolume` not size-restricted | P3 | Volumes can be resized above 100GB after creation |
 | `ec2:ModifyInstanceAttribute` for instance type | P3 | Instance type changeable on stopped instances |
 | IAM inline policy escalation paths | P3 | `PutUserPolicy`, `PutRolePolicy`, `CreatePolicyVersion` unblocked |
