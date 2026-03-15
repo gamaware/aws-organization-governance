@@ -23,6 +23,7 @@ jobs:
           persist-credentials: false
 
       - name: Install and run Semgrep
+        id: semgrep
         run: |
           pip install semgrep
           semgrep scan --config p/default --config p/terraform --error .
@@ -30,11 +31,12 @@ jobs:
       - name: Post summary
         if: always()
         run: |
+          STATUS="${{ steps.semgrep.outcome == 'success' && 'Passed' || 'Failed' }}"
           {
             echo "## Semgrep SAST Results"
             echo ""
             echo "- Config: \`p/default\`, \`p/terraform\`"
-            echo "- Status: Passed"
+            echo "- Status: $STATUS"
           } >> "$GITHUB_STEP_SUMMARY"
 
   trivy:
@@ -49,6 +51,7 @@ jobs:
           persist-credentials: false
 
       - name: Run Trivy IaC scanner
+        id: trivy
         uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: 'config'
@@ -59,10 +62,11 @@ jobs:
       - name: Post summary
         if: always()
         run: |
+          STATUS="${{ steps.trivy.outcome == 'success' && 'Passed' || 'Failed' }}"
           {
             echo "## Trivy IaC Scan Results"
             echo ""
             echo "- Scan target: \`terraform/\`"
             echo "- Severity filter: HIGH, CRITICAL"
-            echo "- Status: Passed"
+            echo "- Status: $STATUS"
           } >> "$GITHUB_STEP_SUMMARY"

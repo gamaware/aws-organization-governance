@@ -19,6 +19,7 @@ jobs:
           persist-credentials: false
 
       - name: Check markdown links
+        id: linkcheck
         uses: gaurav-nelson/github-action-markdown-link-check@v1
         with:
           config-file: '.markdown-link-check.json'
@@ -29,11 +30,12 @@ jobs:
         if: always()
         run: |
           MD_COUNT=$(find . -name '*.md' -not -path './.git/*' | wc -l | tr -d ' ')
+          STATUS="${{ steps.linkcheck.outcome == 'success' && 'Passed' || 'Failed' }}"
           {
             echo "## Link Checker"
             echo ""
             echo "- Markdown files scanned: $MD_COUNT"
-            echo "- Status: Passed (continue-on-error)"
+            echo "- Status: $STATUS (continue-on-error)"
           } >> "$GITHUB_STEP_SUMMARY"
 
   markdown-lint:
@@ -48,6 +50,7 @@ jobs:
           persist-credentials: false
 
       - name: Lint Markdown files
+        id: mdlint
         uses: DavidAnson/markdownlint-cli2-action@v22
         with:
           globs: '**/*.md !terraform/scps/README.md'
@@ -57,11 +60,12 @@ jobs:
         if: always()
         run: |
           MD_COUNT=$(find . -name '*.md' -not -path './.git/*' -not -path './terraform/scps/README.md' | wc -l | tr -d ' ')
+          STATUS="${{ steps.mdlint.outcome == 'success' && 'Passed' || 'Failed' }}"
           {
             echo "## Markdown Linting"
             echo ""
             echo "- Files scanned: $MD_COUNT"
-            echo "- Status: Passed"
+            echo "- Status: $STATUS"
           } >> "$GITHUB_STEP_SUMMARY"
 
   shell-check:
@@ -76,6 +80,7 @@ jobs:
           persist-credentials: false
 
       - name: Run ShellCheck
+        id: shellcheck
         uses: ludeeus/action-shellcheck@2.0.0
         with:
           scandir: '.'
@@ -85,12 +90,13 @@ jobs:
         if: always()
         run: |
           SH_COUNT=$(find . -name '*.sh' -not -path './.git/*' | wc -l | tr -d ' ')
+          STATUS="${{ steps.shellcheck.outcome == 'success' && 'Passed' || 'Failed' }}"
           {
             echo "## Shell Script Validation"
             echo ""
             echo "- Scripts scanned: $SH_COUNT"
             echo "- Severity: warning"
-            echo "- Status: Passed"
+            echo "- Status: $STATUS"
           } >> "$GITHUB_STEP_SUMMARY"
 
   yaml-lint:
@@ -105,6 +111,7 @@ jobs:
           persist-credentials: false
 
       - name: Lint YAML files
+        id: yamllint
         uses: ibiqlik/action-yamllint@v3
         with:
           file_or_dir: '.'
@@ -115,11 +122,12 @@ jobs:
         if: always()
         run: |
           YAML_COUNT=$(find . \( -name '*.yml' -o -name '*.yaml' \) -not -path './.git/*' | wc -l | tr -d ' ')
+          STATUS="${{ steps.yamllint.outcome == 'success' && 'Passed' || 'Failed' }}"
           {
             echo "## YAML Validation"
             echo ""
             echo "- Files scanned: $YAML_COUNT"
-            echo "- Status: Passed"
+            echo "- Status: $STATUS"
           } >> "$GITHUB_STEP_SUMMARY"
 
   file-structure:
@@ -134,6 +142,7 @@ jobs:
           persist-credentials: false
 
       - name: Check required files
+        id: structure
         run: |
           echo "Checking repository structure..."
           errors=0
@@ -166,11 +175,12 @@ jobs:
       - name: Post summary
         if: always()
         run: |
+          STATUS="${{ steps.structure.outcome == 'success' && 'Passed' || 'Failed' }}"
           {
             echo "## Repository Structure"
             echo ""
             echo "- Required files and directories verified"
-            echo "- Status: Passed"
+            echo "- Status: $STATUS"
           } >> "$GITHUB_STEP_SUMMARY"
 
   readme-quality:
@@ -185,6 +195,7 @@ jobs:
           persist-credentials: false
 
       - name: Check README content
+        id: readme
         run: |
           if ! grep -q "## " README.md; then
             echo "WARNING: README.md should have sections (##)"
@@ -207,11 +218,12 @@ jobs:
       - name: Post summary
         if: always()
         run: |
+          STATUS="${{ steps.readme.outcome == 'success' && 'Passed' || 'Failed' }}"
           {
             echo "## README Quality"
             echo ""
             echo "- Sections, badges, author, and license checked"
-            echo "- Status: Passed"
+            echo "- Status: $STATUS"
           } >> "$GITHUB_STEP_SUMMARY"
 
   actions-security:
@@ -235,17 +247,19 @@ jobs:
           sudo mv "$tmpdir/zizmor" /usr/local/bin/zizmor
 
       - name: Run zizmor
+        id: zizmor
         run: zizmor .github/workflows/
 
       - name: Post summary
         if: always()
         run: |
           WF_COUNT=$(find .github/workflows -name '*.yml' | wc -l | tr -d ' ')
+          STATUS="${{ steps.zizmor.outcome == 'success' && 'Passed' || 'Failed' }}"
           {
             echo "## Actions Security (zizmor)"
             echo ""
             echo "- Workflows scanned: $WF_COUNT"
-            echo "- Status: Passed"
+            echo "- Status: $STATUS"
           } >> "$GITHUB_STEP_SUMMARY"
 
   prose-lint:
@@ -269,6 +283,7 @@ jobs:
           sudo mv "$tmpdir/vale" /usr/local/bin/vale
 
       - name: Run Vale
+        id: vale
         run: |
           vale sync
           find . -name '*.md' -not -path './styles/*' -not -path './.git/*' \
@@ -280,10 +295,11 @@ jobs:
         run: |
           MD_COUNT=$(find . -name '*.md' -not -path './.git/*' -not -path './styles/*' \
             -not -path './terraform/scps/README.md' -not -path './.kiro/*' | wc -l | tr -d ' ')
+          STATUS="${{ steps.vale.outcome == 'success' && 'Passed' || 'Failed' }}"
           {
             echo "## Prose Linting (Vale)"
             echo ""
             echo "- Files scanned: $MD_COUNT"
             echo "- Styles: write-good, proselint"
-            echo "- Status: Passed"
+            echo "- Status: $STATUS"
           } >> "$GITHUB_STEP_SUMMARY"
