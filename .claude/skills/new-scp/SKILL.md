@@ -1,10 +1,14 @@
 ---
 name: new-scp
-description: Scaffold a new Service Control Policy with JSON policy, Terraform resources, and validation
+description: >-
+  Scaffold a new Service Control Policy with JSON policy, Terraform
+  resources, outputs, and validation scripts. Use this skill whenever
+  the user wants to create a new SCP, add a deny policy, scaffold an
+  organization policy, or says something like "add a policy for data
+  protection" or "create a new SCP to restrict regions".
 disable-model-invocation: true
 user-invocable: true
 argument-hint: "[policy-name target-type]"
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # Scaffold a New Service Control Policy
