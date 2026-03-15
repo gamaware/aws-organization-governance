@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Update docs, commit, create PR, monitor CI and reviews, address feedback, merge
+description: Update docs, commit, create PR, monitor CI and reviews, address feedback, merge, review post-deploy AI analysis
 user-invocable: true
 argument-hint: "[optional PR number to resume monitoring]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Agent
@@ -28,6 +28,9 @@ what was modified, then update:
 4. **MEMORY.md** — Update project memory at
    `$HOME/.claude/projects/-Users-gamaware-Documents-Repos-personal-aws-organization-governance/memory/MEMORY.md`
    if there are new gotchas, patterns, or preferences learned.
+5. **accepted-findings.md** — If SCP policy files were modified, update
+   `terraform/scps/accepted-findings.md` to reflect changes (e.g., move
+   items from "To Fix" to "Fixed" when bugs are resolved).
 
 Only update files where changes are actually needed. Do not update docs
 for trivial changes.
@@ -127,6 +130,43 @@ git checkout main && git pull
 ```
 
 Report the merge commit and confirm the branch was deleted.
+
+## Phase 6 — Post-Deploy Analysis (terraform changes only)
+
+Skip this phase if the PR did not modify any files under `terraform/`
+or `.github/scripts/ai-deployment-analysis.sh`.
+
+After merge, the terraform-cicd workflow runs automatically. Wait for
+it to complete, then review the AI analysis artifact:
+
+```bash
+# Find the deploy run triggered by the merge
+gh run list --branch main --limit 3 --json databaseId,name,status \
+  --jq '.[] | select(.name | startswith("Terraform plan"))'
+
+# Watch it complete
+gh run watch <run-id> --exit-status
+
+# Download and read the AI analysis
+gh run download <run-id> -n ai-deployment-analysis -D /tmp/ai-analysis
+cat /tmp/ai-analysis/ai-analysis.md
+```
+
+Review the analysis output:
+
+1. **"No new findings"** — Done. Report to user and finish.
+2. **New findings reported** — For each new finding:
+   - Assess severity and validity.
+   - Present findings to the user with a recommended disposition
+     (fix, accepted-risk, wont-fix, to-fix).
+   - After user confirms, update `terraform/scps/accepted-findings.md`
+     with the triage decisions.
+   - If any items are triaged as "to-fix" with P1/P2 priority, ask
+     the user if they want to fix them now in a follow-up PR.
+   - Commit and push the accepted findings update as a new PR.
+3. **Regressions detected** (fixed item reappeared) — Flag immediately
+   to the user. These indicate a revert or merge conflict that undid
+   a previous fix.
 
 ## Rules
 
