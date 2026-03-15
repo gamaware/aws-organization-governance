@@ -160,8 +160,14 @@ aws sts get-caller-identity
 
 ## Development Workflow
 
-```text
-Feature branch → PR → Checks pass → Merge → Auto plan → Approve → Auto apply
+```mermaid
+graph LR
+    A[Feature branch] --> B[PR]
+    B --> C[Checks pass]
+    C --> D[Merge]
+    D --> E[Auto plan]
+    E --> F[Approve]
+    F --> G[Auto apply]
 ```
 
 1. Create feature branch, make changes, commit (pre-commit hooks run)

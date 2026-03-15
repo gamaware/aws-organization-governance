@@ -16,22 +16,25 @@
 
 ## Organization Structure
 
-```text
-Organization
-├─ Management Account (General)
-│
-└─ Root
-   ├─ OU: Dev
-   │  └─ Dev Account
-   │
-   ├─ OU: DevOps
-   │  └─ DevOps Account
-   │
-   ├─ OU: Prod
-   │  └─ Prod Account
-   │
-   └─ OU: QA
-      └─ QA Account
+```mermaid
+graph TB
+    ORG[AWS Organization] --> MGMT[Management Account<br/>General]
+    ORG --> ROOT[Root]
+
+    ROOT --> DEV_OU[OU: Dev]
+    ROOT --> DEVOPS_OU[OU: DevOps]
+    ROOT --> PROD_OU[OU: Prod]
+    ROOT --> QA_OU[OU: QA]
+
+    DEV_OU --> DEV[Dev Account]
+    DEVOPS_OU --> DEVOPS[DevOps Account]
+    PROD_OU --> PROD[Prod Account]
+    QA_OU --> QA[QA Account]
+
+    ROOT -.->|RegionRestriction SCP| ROOT
+    ROOT -.->|ProtectSSOTrustedAccess SCP| ROOT
+    DEV_OU -.->|DevEnvironmentRestrictions SCP| DEV_OU
+    DEV_OU -.->|DevTaggingAndAbusePrevention SCP| DEV_OU
 ```
 
 ## Service Control Policies (SCPs)
@@ -102,6 +105,8 @@ like KMS and ACM can only operate within allowed regions.
   attach, detach SCPs + describe/list + tag operations) with explicit deny
   on dangerous actions (DisableAWSServiceAccess, DeleteOrganization, etc.)
 - `TerraformStateAccess` — S3 bucket read/write for Terraform state
+- `BedrockModelAccess` — Claude Sonnet 4.6 invocation for AI post-deploy
+  analysis (cross-region inference profiles require all-region wildcard)
 
 ### Dev Account
 
@@ -166,20 +171,22 @@ graph TB
         L --> M{Production Environment Gate}
         M -->|Approved| N[Apply Using Saved Plan]
         N --> O[Post-Deploy Validation]
-        O --> P[Infrastructure Updated]
+        O --> P[AI Analysis via Bedrock]
+        P --> Q1[Upload Artifact]
+        Q1 --> Q2[Infrastructure Updated]
     end
 
     subgraph "Destroy Flow - Manual Dispatch"
-        Q[workflow_dispatch] --> R[Destroy Plan Preview]
-        R --> S{Production Environment Gate}
-        S -->|Approved| T[Terraform Destroy]
-        T --> U[Post-Destroy Validation]
+        D1[workflow_dispatch] --> D2[Destroy Plan Preview]
+        D2 --> D3{Production Environment Gate}
+        D3 -->|Approved| D4[Terraform Destroy]
+        D4 --> D5[Post-Destroy Validation]
     end
 
     subgraph "Continuous Monitoring"
-        V[Daily: Drift Detection] -->|Drift found| W[Create GitHub Issue]
-        X[Weekly: Dependabot] --> E
-        Y[Weekly: Pre-commit Update] --> E
+        M1[Daily: Drift Detection] -->|Drift found| M2[Create GitHub Issue]
+        M3[Weekly: Dependabot] --> E
+        M4[Weekly: Pre-commit Update] --> E
     end
 ```
 
@@ -203,6 +210,153 @@ terraform {
 - Built-in to Terraform 1.10+
 - Automatic cleanup of stale locks
 - Lower cost
+
+## SCP Union-Deny Model
+
+SCPs use a union-deny evaluation: if **any** SCP in the hierarchy denies
+an action, it is blocked regardless of what other policies allow. This has
+critical implications for how org-root and OU-level SCPs interact.
+
+```mermaid
+graph LR
+    subgraph "Org Root SCPs"
+        R1[RegionRestriction<br/>NotAction exempts global services]
+        R2[ProtectSSOTrustedAccess<br/>Deny SSO disable]
+    end
+
+    subgraph "Dev OU SCPs"
+        D1[DevEnvironmentRestrictions<br/>Deny costly instances + root actions]
+        D2[DevTaggingAndAbusePrevention<br/>Deny untagged resources + abuse]
+    end
+
+    subgraph "Evaluation"
+        E{Action requested}
+        E -->|Check| R1
+        E -->|Check| R2
+        E -->|Check| D1
+        E -->|Check| D2
+        R1 & R2 & D1 & D2 -->|Any deny?| RESULT{Result}
+        RESULT -->|Yes| BLOCKED[Action BLOCKED]
+        RESULT -->|No deny| ALLOWED[Action ALLOWED]
+    end
+```
+
+**Key rules:**
+
+- Never use blanket `Action: *` deny alongside a `NotAction` pattern — the
+  blanket deny fires on the exempted global services
+- Org-root SCPs apply to ALL accounts in the hierarchy including Dev OU
+- OU-level SCPs add additional restrictions, they cannot relax org-root denies
+- Condition keys that are absent from a request cause `StringNotLike` to
+  evaluate as true (deny fires) — always pair with a `Null` check
+
+## AI Post-Deployment Analysis
+
+After every terraform apply, an AI analysis runs via Claude Sonnet 4.6 on
+Amazon Bedrock. It reviews all SCP policies, the terraform plan, and
+deterministic validation results.
+
+### Analysis Flow
+
+```mermaid
+graph TB
+    A[Terraform Apply] --> B[Deterministic Validation]
+    B --> C[AI Analysis Script]
+    C --> D[Gather SCP Policies + Plan + Validation Log]
+    D --> E[Load Accepted Findings]
+    E --> F[Build Prompt with Context]
+    F --> G[Call Claude via Bedrock]
+    G --> H[Save to ai-analysis.md]
+    H --> I[Upload as Artifact]
+    H --> J[Post to Step Summary]
+```
+
+### Accepted Findings Loop
+
+The AI prompt includes `terraform/scps/accepted-findings.md` which tracks
+all previously triaged findings. This prevents the non-deterministic nature
+of AI from re-reporting the same issues on every run.
+
+```mermaid
+graph LR
+    A[Deploy] --> B[AI Analyzes]
+    B --> C{New findings?}
+    C -->|Yes| D[Review + Triage]
+    D --> E[Update accepted-findings.md]
+    E --> F[Commit]
+    F --> A
+    C -->|No| G[No new findings - Done]
+```
+
+**Dispositions:** Each finding gets one of four statuses:
+
+| Status | Meaning |
+| --- | --- |
+| fixed | Resolved in code |
+| accepted-risk | Reviewed, intentionally left as-is |
+| wont-fix | Not worth the complexity or out of scope |
+| to-fix | Real issue, scheduled for a future PR |
+
+**Regression detection:** If a finding marked as "fixed" reappears, the AI
+flags it as a regression instead of suppressing it.
+
+**Access:** Download the artifact via `gh run download <RUN_ID> -n ai-deployment-analysis`
+then read `ai-analysis.md`.
+
+### Bedrock IAM
+
+The GitHub Actions role has a `BedrockModelAccess` inline policy:
+
+- Foundation models: `arn:aws:bedrock:*::foundation-model/anthropic.*`
+- Inference profiles: `arn:aws:bedrock:*:*:inference-profile/us.anthropic.*`
+
+All-region wildcards are required because cross-region inference profiles
+(`us.anthropic.claude-sonnet-4-6`) route requests internally across
+multiple US regions.
+
+## End-to-End Deployment Lifecycle
+
+Complete flow from code change to live SCP, showing what happens at each
+stage and which component is responsible.
+
+```mermaid
+sequenceDiagram
+    participant Dev as Developer
+    participant GH as GitHub
+    participant CI as GitHub Actions
+    participant AWS as AWS Organizations
+
+    Dev->>Dev: Edit SCP JSON + Terraform
+    Dev->>Dev: Pre-commit hooks (26 checks)
+    Dev->>GH: Push feature branch
+    Dev->>GH: Create PR
+
+    par PR Checks (parallel)
+        CI->>CI: TFLint + Checkov
+        CI->>CI: Semgrep + Trivy
+        CI->>CI: Terraform plan preview
+        CI->>CI: Quality checks
+    end
+
+    CI->>GH: Post plan as PR comment
+    GH->>GH: CodeRabbit + Copilot review
+    Dev->>GH: Address reviews + merge
+
+    Note over CI: Push to main triggers pipeline
+    CI->>CI: Terraform plan
+    CI->>CI: Save plan artifact
+    CI-->>Dev: Awaiting approval (production gate)
+    Dev->>CI: Approve deployment
+
+    CI->>AWS: Terraform apply (saved plan)
+    CI->>AWS: Deterministic validation (AWS CLI)
+    CI->>CI: AI analysis (Bedrock)
+    CI->>GH: Upload analysis artifact
+
+    Note over Dev: Download artifact to review
+    Dev->>Dev: Triage new findings
+    Dev->>GH: Update accepted-findings.md
+```
 
 ## Security Controls
 
@@ -240,8 +394,10 @@ terraform {
 
 #### 5. Post-Deployment Validation
 
-- AWS CLI verification after apply: SCPs exist, attached to correct
-  targets, policy content matches expectations
+- Deterministic: AWS CLI verification after apply — SCPs exist, attached
+  to correct targets, policy content matches expectations
+- AI analysis: Claude via Bedrock reviews security posture, SCP conflicts,
+  best practices, and recommendations (artifact uploaded for review)
 - AWS CLI verification after destroy: no orphaned SCPs remain
 
 #### 6. Drift Detection
