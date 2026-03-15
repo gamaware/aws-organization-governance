@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Update docs, commit, create PR, monitor CI and reviews, address feedback, merge, review post-deploy AI analysis
+description: Ship PRs end-to-end with post-deploy AI analysis
 user-invocable: true
 argument-hint: "[optional PR number to resume monitoring]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Agent
@@ -133,23 +133,40 @@ Report the merge commit and confirm the branch was deleted.
 
 ## Phase 6 — Post-Deploy Analysis (terraform changes only)
 
-Skip this phase if the PR did not modify any files under `terraform/`
-or `.github/scripts/ai-deployment-analysis.sh`.
+Skip this phase if the PR did not modify any files under `terraform/`,
+`.github/actions/`, `.github/scripts/`, or `.github/workflows/terraform-cicd.yml`.
 
-After merge, the terraform-cicd workflow runs automatically. Wait for
-it to complete, then review the AI analysis artifact:
+After merge, the terraform-cicd workflow runs automatically. The workflow
+pauses at the `production` environment gate — it may need manual approval
+before apply proceeds. Wait for the full run to complete:
 
 ```bash
 # Find the deploy run triggered by the merge
-gh run list --branch main --limit 3 --json databaseId,name,status \
-  --jq '.[] | select(.name | startswith("Terraform plan"))'
+gh run list --branch main --limit 3 --workflow terraform-cicd.yml \
+  --json databaseId,status --jq '.[0].databaseId'
 
-# Watch it complete
+# Watch it complete (includes environment gate wait)
 gh run watch <run-id> --exit-status
+```
 
-# Download and read the AI analysis
+After the run completes, check if the AI analysis artifact exists and
+download it:
+
+```bash
+# Check if artifact was uploaded (may be absent if validation failed)
+gh api repos/{owner}/{repo}/actions/runs/<run-id>/artifacts \
+  --jq '.artifacts[] | select(.name == "ai-deployment-analysis") | .id'
+
+# If artifact exists, download and read
 gh run download <run-id> -n ai-deployment-analysis -D /tmp/ai-analysis
 cat /tmp/ai-analysis/ai-analysis.md
+```
+
+If the artifact is missing, check the workflow logs for failures in
+the Post-Deployment Validation or AI Deployment Analysis steps:
+
+```bash
+gh run view <run-id> --log-failed
 ```
 
 Review the analysis output:
@@ -158,7 +175,7 @@ Review the analysis output:
 2. **New findings reported** — For each new finding:
    - Assess severity and validity.
    - Present findings to the user with a recommended disposition
-     (fix, accepted-risk, wont-fix, to-fix).
+     (fixed, accepted-risk, wont-fix, to-fix).
    - After user confirms, update `terraform/scps/accepted-findings.md`
      with the triage decisions.
    - If any items are triaged as "to-fix" with P1/P2 priority, ask
