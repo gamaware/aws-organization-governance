@@ -25,7 +25,11 @@
       "Effect": "Deny",
       "Action": [
         "rds:CreateDBInstance",
-        "rds:CreateDBCluster"
+        "rds:CreateDBCluster",
+        "rds:RestoreDBInstanceFromDBSnapshot",
+        "rds:RestoreDBInstanceToPointInTime",
+        "rds:RestoreDBClusterFromSnapshot",
+        "rds:RestoreDBClusterToPointInTime"
       ],
       "Resource": "*",
       "Condition": {
@@ -53,6 +57,9 @@
             "db.t3.*",
             "db.t4g.*"
           ]
+        },
+        "Null": {
+          "rds:DatabaseClass": "false"
         }
       }
     },
@@ -79,7 +86,8 @@
       "Action": [
         "cloudtrail:DeleteTrail",
         "cloudtrail:StopLogging",
-        "cloudtrail:UpdateTrail"
+        "cloudtrail:UpdateTrail",
+        "cloudtrail:PutEventSelectors"
       ],
       "Resource": "*"
     },

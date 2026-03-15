@@ -80,9 +80,9 @@
       }
     },
     {
-      "Sid": "DenyS3WithoutTeamTag",
+      "Sid": "DenyS3TaggingWithoutTeamTag",
       "Effect": "Deny",
-      "Action": "s3:CreateBucket",
+      "Action": "s3:PutBucketTagging",
       "Resource": "*",
       "Condition": {
         "Null": {
@@ -91,9 +91,9 @@
       }
     },
     {
-      "Sid": "DenyS3WithoutNameTag",
+      "Sid": "DenyS3TaggingWithoutNameTag",
       "Effect": "Deny",
-      "Action": "s3:CreateBucket",
+      "Action": "s3:PutBucketTagging",
       "Resource": "*",
       "Condition": {
         "Null": {
@@ -109,7 +109,7 @@
         "rds:CreateDBInstance",
         "rds:CreateDBCluster",
         "lambda:CreateFunction",
-        "s3:CreateBucket"
+        "s3:PutBucketTagging"
       ],
       "Resource": "*",
       "Condition": {
@@ -134,7 +134,7 @@
         "rds:CreateDBInstance",
         "rds:CreateDBCluster",
         "lambda:CreateFunction",
-        "s3:CreateBucket"
+        "s3:PutBucketTagging"
       ],
       "Resource": "*",
       "Condition": {
