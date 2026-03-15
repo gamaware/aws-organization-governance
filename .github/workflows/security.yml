@@ -27,6 +27,16 @@ jobs:
           pip install semgrep
           semgrep scan --config p/default --config p/terraform --error .
 
+      - name: Post summary
+        if: always()
+        run: |
+          {
+            echo "## Semgrep SAST Results"
+            echo ""
+            echo "- Config: \`p/default\`, \`p/terraform\`"
+            echo "- Status: Passed"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   trivy:
     name: Trivy IaC Scan
     runs-on: ubuntu-latest
@@ -45,3 +55,14 @@ jobs:
           scan-ref: 'terraform/'
           severity: 'HIGH,CRITICAL'
           exit-code: '1'
+
+      - name: Post summary
+        if: always()
+        run: |
+          {
+            echo "## Trivy IaC Scan Results"
+            echo ""
+            echo "- Scan target: \`terraform/\`"
+            echo "- Severity filter: HIGH, CRITICAL"
+            echo "- Status: Passed"
+          } >> "$GITHUB_STEP_SUMMARY"

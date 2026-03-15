@@ -173,10 +173,12 @@ Weekly auto-update of pre-commit hook versions via PR.
 
 Runs on every PR and push to main — markdownlint, link checking, shellcheck, yamllint,
 zizmor, file structure validation, README quality check, Vale (prose linting).
+Each job posts a `$GITHUB_STEP_SUMMARY` with scan counts and status.
 
 ### security.yml
 
 Runs on every PR and push to main — Semgrep SAST and Trivy IaC scanning.
+Each job posts a `$GITHUB_STEP_SUMMARY` with config details and status.
 
 ### Dependabot
 
