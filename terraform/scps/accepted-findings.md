@@ -38,6 +38,7 @@ reports genuinely new issues.
 | No EIP count limit via SCP | SCPs cannot count resources — use AWS Config rule instead |
 | No CloudWatch cost control for log ingestion | Out of scope for SCPs — use CloudWatch quotas |
 | No `lambda:UpdateFunctionCode` tag check | Tags enforced at create, update does not change resource cost profile |
+| S3 buckets can be created without tags | AWS limitation — `CreateBucket` does not support `aws:RequestTag`. Enforce via Config rule |
 
 ## Won't Fix
 

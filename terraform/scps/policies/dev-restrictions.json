@@ -26,8 +26,10 @@
       "Action": [
         "rds:CreateDBInstance",
         "rds:CreateDBCluster",
+        "rds:CreateDBInstanceReadReplica",
         "rds:RestoreDBInstanceFromDBSnapshot",
         "rds:RestoreDBInstanceToPointInTime",
+        "rds:RestoreDBInstanceFromS3",
         "rds:RestoreDBClusterFromSnapshot",
         "rds:RestoreDBClusterToPointInTime"
       ],
