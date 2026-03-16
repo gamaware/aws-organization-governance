@@ -89,7 +89,7 @@ All hooks must pass before committing. Install with `pre-commit install`.
   check-symlinks, check-case-conflict, no-commit-to-branch (main).
 - **Secrets**: detect-secrets (with `.secrets.baseline`), gitleaks.
 - **Terraform**: terraform\_fmt, terraform\_validate, terraform\_tflint,
-  terraform\_docs, terrascan, terraform\_checkov.
+  terraform\_docs, terraform\_trivy, terraform\_checkov.
 - **Shell**: shellcheck (severity: warning), shellharden.
 - **Markdown**: markdownlint with `--fix`.
 - **Prose**: Vale with write-good (passive voice, weasel words) and proselint (grammar, usage).
