@@ -40,12 +40,8 @@ repos:
       - id: terraform_tflint
       - id: terraform_docs
         files: ^terraform/scps/.*\.tf$
-      - id: terrascan
+      - id: terraform_trivy
         files: ^terraform/scps/.*\.tf$
-        args:
-          - --args=--non-recursive
-          - --args=--policy-type=aws
-          - --args=--iac-version=v15
       - id: terraform_checkov
         files: ^terraform/scps/.*\.tf$
         args:
