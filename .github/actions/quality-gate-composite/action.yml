@@ -1,0 +1,18 @@
+name: 'Quality and Security Gate Composite Action'
+description: 'Waits for Quality Checks and Security Scanning to pass before allowing Terraform operations'
+
+inputs:
+  github_token:
+    description: 'GitHub token for API calls'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Wait for quality and security workflows
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github_token }}
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+      run: ${{ github.workspace }}/.github/scripts/quality-gate.sh
