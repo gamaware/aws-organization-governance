@@ -100,8 +100,9 @@ All hooks must pass before committing. Install with `pre-commit install`.
 
 Hooks in `.claude/settings.json` automate deterministic actions:
 
-- **Post-edit** (`post-edit.sh`): After every Edit/Write, auto-runs:
-  - `shellharden --replace` and `chmod +x` on `.sh` files
+- **Post-edit** (`post-edit.sh`): Uses `$TOOL_INPUT_FILE_PATH` to detect the
+  edited file. After every Edit/Write, auto-runs:
+  - `shellharden --replace` and `chmod +x` on `.sh` files (only if shebang present)
   - `markdownlint --fix` on `.md` files
   - `terraform fmt` on `.tf` files
   - JSON validation on `policies/*.json` files
