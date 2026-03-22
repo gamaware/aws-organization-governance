@@ -2,36 +2,36 @@
 # Post-edit hook: auto-fix and validate files after edits
 set -euo pipefail
 
-if ! command -v jq >/dev/null 2>&1; then
-  exit 0
+FILE="${TOOL_INPUT_FILE_PATH:-}"
+
+if [ "$FILE" = "" ]; then
+    exit 0
 fi
 
-INPUT=$(cat)
-FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null) || FILE_PATH=""
-
-if [[ -z "$FILE_PATH" || ! -f "$FILE_PATH" ]]; then
-  exit 0
-fi
-
-# Auto-fix shell scripts with shellharden and restore executable permissions
-if [[ "$FILE_PATH" =~ \.sh$ ]]; then
-  shellharden --replace "$FILE_PATH" 2>/dev/null || true
-  chmod +x "$FILE_PATH"
-fi
-
-# Auto-fix markdown with markdownlint
-if [[ "$FILE_PATH" =~ \.md$ ]]; then
-  npx markdownlint --fix "$FILE_PATH" 2>/dev/null || true
-fi
-
-# Auto-format Terraform files
-if [[ "$FILE_PATH" =~ \.tf$ ]]; then
-  terraform fmt "$FILE_PATH" 2>/dev/null || true
-fi
-
-# Validate JSON policy files
-if [[ "$FILE_PATH" =~ policies/.*\.json$ ]]; then
-  if ! python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$FILE_PATH" 2>/dev/null; then
-    echo "Warning: $FILE_PATH is not valid JSON" >&2
-  fi
-fi
+case "$FILE" in
+    *.sh)
+        if [ -f "$FILE" ] && head -1 "$FILE" | grep -q '^#!'; then
+            if command -v shellharden > /dev/null 2>&1; then
+                shellharden --replace "$FILE" 2>/dev/null || true
+            fi
+            chmod +x "$FILE"
+        fi
+        ;;
+    *.md)
+        if command -v markdownlint > /dev/null 2>&1; then
+            markdownlint --fix "$FILE" 2>/dev/null || true
+        fi
+        ;;
+    *.tf)
+        if command -v terraform > /dev/null 2>&1; then
+            terraform fmt "$FILE" 2>/dev/null || true
+        fi
+        ;;
+    terraform/scps/policies/*.json | */terraform/scps/policies/*.json)
+        if command -v python3 > /dev/null 2>&1; then
+            if ! python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$FILE" 2>/dev/null; then
+                echo "Warning: $FILE is not valid JSON" >&2
+            fi
+        fi
+        ;;
+esac
