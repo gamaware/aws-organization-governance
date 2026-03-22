@@ -10,10 +10,10 @@ fi
 
 case "$FILE" in
     *.sh)
-        if command -v shellharden > /dev/null 2>&1; then
-            shellharden --replace "$FILE" 2>/dev/null || true
-        fi
         if [ -f "$FILE" ] && head -1 "$FILE" | grep -q '^#!'; then
+            if command -v shellharden > /dev/null 2>&1; then
+                shellharden --replace "$FILE" 2>/dev/null || true
+            fi
             chmod +x "$FILE"
         fi
         ;;
@@ -27,7 +27,7 @@ case "$FILE" in
             terraform fmt "$FILE" 2>/dev/null || true
         fi
         ;;
-    terraform/scps/policies/*.json)
+    terraform/scps/policies/*.json | */terraform/scps/policies/*.json)
         if command -v python3 > /dev/null 2>&1; then
             if ! python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$FILE" 2>/dev/null; then
                 echo "Warning: $FILE is not valid JSON" >&2
