@@ -51,7 +51,7 @@ jobs:
 
       - name: Lint Markdown files
         id: mdlint
-        uses: DavidAnson/markdownlint-cli2-action@v22
+        uses: DavidAnson/markdownlint-cli2-action@v23
         with:
           globs: '**/*.md !terraform/scps/README.md'
           config: '.markdownlint.yaml'
