@@ -46,6 +46,8 @@ runs:
         DEV_TAGGING_SCP_ARN: ${{ steps.outputs.outputs.dev_tagging_scp_arn }}
         REGION_SCP_ID: ${{ steps.outputs.outputs.region_scp_id }}
         REGION_SCP_ARN: ${{ steps.outputs.outputs.region_scp_arn }}
+        SECURITY_DEFAULTS_SCP_ID: ${{ steps.outputs.outputs.security_defaults_scp_id }}
+        SECURITY_DEFAULTS_SCP_ARN: ${{ steps.outputs.outputs.security_defaults_scp_arn }}
       run: |
         set +e
         LOG_FILE="$(mktemp)"

@@ -14,7 +14,7 @@ multiple independent layers of verification.
 
 Implement seven layers of defense:
 
-1. **Pre-commit hooks (local)** — 25+ hooks: formatting, validation,
+1. **Pre-commit hooks (local)** — 26 hooks: formatting, validation,
    security scanning, linting, conventional commits.
 2. **PR checks (CI)** — TFLint, Checkov, Terraform plan, quality
    checks, security scanning, CodeRabbit + Copilot AI review.
