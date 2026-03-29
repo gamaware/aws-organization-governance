@@ -134,6 +134,15 @@ resource "aws_iam_role_policy" "codebuild_cleanup" {
         Resource = "arn:aws:logs:${var.aws_region}:${var.account_id}:*"
       },
       {
+        Sid    = "AllowKMS"
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey"
+        ]
+        Resource = "*"
+      },
+      {
         Sid      = "DenyIdentityAndAudit"
         Effect   = "Deny"
         Action   = ["iam:*", "organizations:*", "sso:*", "sso-admin:*", "cloudtrail:*"]
@@ -198,6 +207,15 @@ resource "aws_iam_role_policy" "lambda_verify" {
           "secretsmanager:List*",
           "states:List*",
           "tag:GetResources"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "AllowKMS"
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey"
         ]
         Resource = "*"
       },

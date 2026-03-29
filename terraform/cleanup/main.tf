@@ -1,3 +1,15 @@
+# KMS key for encryption
+resource "aws_kms_key" "cleanup" {
+  description             = "Encryption key for cleanup reports and notifications"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+}
+
+resource "aws_kms_alias" "cleanup" {
+  name          = "alias/cleanup"
+  target_key_id = aws_kms_key.cleanup.key_id
+}
+
 # S3 bucket for cleanup reports and AI analysis
 resource "aws_s3_bucket" "cleanup_reports" {
   bucket = "cleanup-reports-${var.account_id}"
@@ -26,8 +38,10 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "cleanup_reports" 
   bucket = aws_s3_bucket.cleanup_reports.id
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.cleanup.arn
     }
+    bucket_key_enabled = true
   }
 }
 
@@ -41,7 +55,8 @@ resource "aws_s3_bucket_public_access_block" "cleanup_reports" {
 
 # SNS topic for cleanup notifications
 resource "aws_sns_topic" "cleanup_notifications" {
-  name = "cleanup-notifications"
+  name              = "cleanup-notifications"
+  kms_master_key_id = aws_kms_key.cleanup.id
 }
 
 resource "aws_sns_topic_subscription" "cleanup_email" {
@@ -76,6 +91,7 @@ resource "aws_lambda_function" "ai_verify" {
   timeout          = 900
   memory_size      = 512
   role             = aws_iam_role.lambda_execution.arn
+  kms_key_arn      = aws_kms_key.cleanup.arn
 
   environment {
     variables = {
