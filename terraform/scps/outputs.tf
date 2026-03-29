@@ -38,6 +38,16 @@ output "dev_tagging_scp_arn" {
   value       = aws_organizations_policy.dev_tagging.arn
 }
 
+output "security_defaults_scp_id" {
+  description = "Security Defaults SCP Policy ID"
+  value       = aws_organizations_policy.security_defaults.id
+}
+
+output "security_defaults_scp_arn" {
+  description = "Security Defaults SCP Policy ARN"
+  value       = aws_organizations_policy.security_defaults.arn
+}
+
 output "region_restriction_scp_id" {
   description = "Region Restriction SCP Policy ID"
   value       = aws_organizations_policy.region_restriction.id

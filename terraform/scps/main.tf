@@ -37,6 +37,19 @@ resource "aws_organizations_policy_attachment" "protect_sso_root" {
   target_id = data.aws_organizations_organization.org.roots[0].id
 }
 
+# Dev OU — Security defaults (EBS encryption, IMDSv2, S3 public access)
+resource "aws_organizations_policy" "security_defaults" {
+  name        = "SecurityDefaults"
+  description = "Enforce EBS encryption, IMDSv2, and S3 public access block"
+  type        = "SERVICE_CONTROL_POLICY"
+  content     = file("${path.module}/policies/security-defaults.json")
+}
+
+resource "aws_organizations_policy_attachment" "security_defaults_dev" {
+  policy_id = aws_organizations_policy.security_defaults.id
+  target_id = var.dev_ou_id
+}
+
 # Org root — Region restriction (all accounts)
 resource "aws_organizations_policy" "region_restriction" {
   name        = "RegionRestriction"

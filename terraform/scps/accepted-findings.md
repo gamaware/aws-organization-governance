@@ -29,6 +29,7 @@ reports genuinely new issues.
 | `DenyAbusableServices` blocks `aws-marketplace:*` entirely | Intentional — Dev OU should not use marketplace |
 | `DenyCloudTrailDeletion` blocks `cloudtrail:UpdateTrail` | Intentional — trail changes go through management account |
 | `ArnLike` with exact ARNs on `DenyAdminPolicyAttachment` | Functionally equivalent to `ArnEquals`, cosmetic only |
+| Bedrock cross-region exempt for Admin role only | Required for cross-region inference profiles used by Claude Code |
 | `DenyRootUserActions` uses `StringLike` | Correct — wildcard `*` for account ID requires `StringLike` |
 | `t4g.*` ARM instances allowed in EC2 restrictions | Intentional — ARM instances are cost-effective |
 | Seven overlapping `ec2:RunInstances` deny conditions | Intentional defense-in-depth, developer docs explain requirements |

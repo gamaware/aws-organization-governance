@@ -8,6 +8,9 @@
         "aws-marketplace-management:*",
         "aws-marketplace:*",
         "aws-portal:*",
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:ListInferenceProfiles",
         "billing:*",
         "budgets:*",
         "ce:*",
@@ -38,6 +41,26 @@
           "aws:RequestedRegion": [
             "us-east-1"
           ]
+        }
+      }
+    },
+    {
+      "Sid": "DenyBedrockCrossRegionExceptAdmin",
+      "Effect": "Deny",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:ListInferenceProfiles"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringNotEquals": {
+          "aws:RequestedRegion": [
+            "us-east-1"
+          ]
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*/AWSReservedSSO_AdministratorAccess_*"
         }
       }
     }
