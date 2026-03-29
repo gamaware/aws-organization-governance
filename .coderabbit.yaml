@@ -8,6 +8,11 @@ reviews:
       instructions: >
         Review for Terraform best practices, security misconfigurations,
         and AWS Organizations SCP policy correctness.
+    - path: "terraform/cleanup/**"
+      instructions: >
+        Review for Terraform best practices, IAM least-privilege in iam.tf,
+        Step Functions and Lambda configuration correctness, and secure
+        aws-nuke config template handling in nuke-config.yaml.tpl.
     - path: ".github/workflows/**"
       instructions: >
         Review for GitHub Actions security best practices, pinned action
