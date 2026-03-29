@@ -9,6 +9,10 @@
         "ec2:CreateVpc",
         "ec2:CreateSubnet",
         "ec2:CreateSecurityGroup",
+        "ec2:CreateInternetGateway",
+        "ec2:CreateNatGateway",
+        "ec2:CreateRouteTable",
+        "ec2:AllocateAddress",
         "rds:CreateDBInstance",
         "rds:CreateDBCluster",
         "lambda:CreateFunction",
@@ -27,8 +31,7 @@
         "cognito-idp:CreateUserPool",
         "states:CreateStateMachine",
         "secretsmanager:CreateSecret",
-        "cloudformation:CreateStack",
-        "cloudfront:CreateDistribution"
+        "cloudformation:CreateStack"
       ],
       "Resource": "*",
       "Condition": {
@@ -45,6 +48,10 @@
         "ec2:CreateVpc",
         "ec2:CreateSubnet",
         "ec2:CreateSecurityGroup",
+        "ec2:CreateInternetGateway",
+        "ec2:CreateNatGateway",
+        "ec2:CreateRouteTable",
+        "ec2:AllocateAddress",
         "rds:CreateDBInstance",
         "rds:CreateDBCluster",
         "lambda:CreateFunction",
@@ -63,8 +70,7 @@
         "cognito-idp:CreateUserPool",
         "states:CreateStateMachine",
         "secretsmanager:CreateSecret",
-        "cloudformation:CreateStack",
-        "cloudfront:CreateDistribution"
+        "cloudformation:CreateStack"
       ],
       "Resource": "*",
       "Condition": {
@@ -81,6 +87,10 @@
         "ec2:CreateVpc",
         "ec2:CreateSubnet",
         "ec2:CreateSecurityGroup",
+        "ec2:CreateInternetGateway",
+        "ec2:CreateNatGateway",
+        "ec2:CreateRouteTable",
+        "ec2:AllocateAddress",
         "rds:CreateDBInstance",
         "rds:CreateDBCluster",
         "lambda:CreateFunction",
@@ -99,8 +109,7 @@
         "cognito-idp:CreateUserPool",
         "states:CreateStateMachine",
         "secretsmanager:CreateSecret",
-        "cloudformation:CreateStack",
-        "cloudfront:CreateDistribution"
+        "cloudformation:CreateStack"
       ],
       "Resource": "*",
       "Condition": {
@@ -128,6 +137,10 @@
         "ec2:CreateVpc",
         "ec2:CreateSubnet",
         "ec2:CreateSecurityGroup",
+        "ec2:CreateInternetGateway",
+        "ec2:CreateNatGateway",
+        "ec2:CreateRouteTable",
+        "ec2:AllocateAddress",
         "rds:CreateDBInstance",
         "rds:CreateDBCluster",
         "lambda:CreateFunction",
@@ -146,8 +159,7 @@
         "cognito-idp:CreateUserPool",
         "states:CreateStateMachine",
         "secretsmanager:CreateSecret",
-        "cloudformation:CreateStack",
-        "cloudfront:CreateDistribution"
+        "cloudformation:CreateStack"
       ],
       "Resource": "*",
       "Condition": {
