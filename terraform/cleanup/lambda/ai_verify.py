@@ -212,10 +212,10 @@ def get_full_inventory():
 
     try:
         r = clients["secretsmanager"].list_secrets()
-        inventory["secrets"] = [s["Name"] for s in r["SecretList"]]
+        inventory["sm_entries"] = [s["Name"] for s in r["SecretList"]]
     except Exception as e:
-        logger.error("Failed to scan secretsmanager entries: %s", e)
-        inventory["secrets"] = {"error": str(e)}
+        logger.error("Failed to scan sm_entries: %s", e)
+        inventory["sm_entries"] = {"error": str(e)}
 
     return inventory
 
