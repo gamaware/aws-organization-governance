@@ -12,8 +12,14 @@ within the restrictions.
 
 ## Required Tags
 
-Every EC2 instance, RDS database, Lambda function, and S3 bucket
-you create **must** have these two tags:
+Almost every resource you create **must** have these two tags.
+Enforced services include: EC2 instances, VPCs, subnets, security
+groups, RDS databases, Lambda functions, S3 buckets (via tagging),
+DynamoDB tables, SQS queues, SNS topics, ECS clusters and services,
+ECR repositories, ElastiCache clusters, load balancers, target groups,
+EventBridge rules, Cognito user pools, Step Functions state machines,
+Secrets Manager secrets, CloudFormation stacks, and CloudFront
+distributions.
 
 | Tag    | Value            | Example             |
 |--------|------------------|---------------------|
@@ -23,6 +29,10 @@ you create **must** have these two tags:
 Valid team values: `team-1` through `team-7`
 
 **If you forget either tag, the resource creation will be denied.**
+
+> **Note:** VPC resources (VPCs, subnets, security groups) also
+> require tags. When creating networking infrastructure, include
+> `Team` and `Name` tags just like any other resource.
 
 ### How to tag resources
 
