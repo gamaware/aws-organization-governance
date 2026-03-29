@@ -65,7 +65,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cleanup-tfplan
-          path: terraform/cleanup/tfplan
+          path: |
+            terraform/cleanup/tfplan
+            terraform/cleanup/lambda.zip
           retention-days: 7
 
   terraform-apply:
