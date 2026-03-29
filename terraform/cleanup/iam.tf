@@ -220,6 +220,15 @@ resource "aws_iam_role_policy" "lambda_verify" {
         Resource = "*"
       },
       {
+        Sid    = "AllowXRay"
+        Effect = "Allow"
+        Action = [
+          "xray:PutTraceSegments",
+          "xray:PutTelemetryRecords"
+        ]
+        Resource = "*"
+      },
+      {
         Sid    = "AllowBedrock"
         Effect = "Allow"
         Action = ["bedrock:InvokeModel"]

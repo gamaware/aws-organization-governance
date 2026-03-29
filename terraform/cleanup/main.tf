@@ -93,6 +93,10 @@ resource "aws_lambda_function" "ai_verify" {
   role             = aws_iam_role.lambda_execution.arn
   kms_key_arn      = aws_kms_key.cleanup.arn
 
+  tracing_config {
+    mode = "Active"
+  }
+
   environment {
     variables = {
       REPORTS_BUCKET    = aws_s3_bucket.cleanup_reports.id
