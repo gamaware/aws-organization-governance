@@ -9,6 +9,10 @@ account-blocklist:
   - "571600856221"
   - "222634394903"
 
+# NOTE: aws-nuke deletes everything NOT matching a filter. The filters below
+# protect infrastructure resources. All other resources (including student
+# resources with team tags) are deleted. This means untagged non-infrastructure
+# resources are also deleted. The AI verification step catches false positives.
 accounts:
   "${account_id}":
     filters:

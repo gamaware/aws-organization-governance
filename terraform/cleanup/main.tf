@@ -12,7 +12,8 @@ resource "aws_kms_alias" "cleanup" {
 
 # S3 bucket for cleanup reports and AI analysis
 resource "aws_s3_bucket" "cleanup_reports" {
-  bucket = "cleanup-reports-${var.account_id}"
+  bucket        = "cleanup-reports-${var.account_id}"
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_versioning" "cleanup_reports" {
@@ -30,6 +31,12 @@ resource "aws_s3_bucket_lifecycle_configuration" "cleanup_reports" {
     status = "Enabled"
     expiration {
       days = 90
+    }
+    noncurrent_version_expiration {
+      noncurrent_days = 30
+    }
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
     }
   }
 }
@@ -178,8 +185,9 @@ resource "aws_codebuild_project" "cleanup" {
                 --no-prompt \
                 --force \
                 $DRY_RUN_FLAG \
-                2>&1 | tee /tmp/nuke-output.log || true
+                2>&1 | tee /tmp/nuke-output.log
         post_build:
+          on-failure: CONTINUE
           commands:
             - echo "Uploading report..."
             - aws s3 cp /tmp/nuke-output.log "s3://$REPORTS_BUCKET/reports/$TIMESTAMP/nuke-output.log"
@@ -226,13 +234,10 @@ resource "aws_sfn_state_machine" "cleanup" {
       }
       WaitForApproval = {
         Type           = "Task"
-        Resource       = "arn:aws:states:::activity:waitForTaskToken"
+        Resource       = aws_sfn_activity.cleanup_approval.id
         TimeoutSeconds = 86400
-        Parameters = {
-          "taskToken.$" = "$$.Task.Token"
-        }
-        ResultPath = "$.approval"
-        Next       = "Cleanup"
+        ResultPath     = "$.approval"
+        Next           = "Cleanup"
         Catch = [
           {
             ErrorEquals = ["States.Timeout"]

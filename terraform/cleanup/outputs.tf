@@ -29,6 +29,6 @@ output "scheduler_name" {
 }
 
 output "approval_activity_arn" {
-  description = "Step Functions Activity ARN for cleanup approval"
+  description = "Step Functions Activity ARN for cleanup approval (id equals ARN for activities)"
   value       = aws_sfn_activity.cleanup_approval.id
 }

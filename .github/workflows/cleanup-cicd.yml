@@ -18,7 +18,6 @@ on:
         type: choice
         options:
           - apply
-          - destroy
         default: apply
 
 concurrency:

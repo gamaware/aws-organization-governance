@@ -2,7 +2,7 @@
 
 Runs two independent scans:
 1. Tag-based: queries Resource Groups Tagging API for remaining team tags
-2. Full inventory: calls 30+ AWS APIs to get all resources
+2. Full inventory: calls 16 AWS APIs to get all resources
 
 Sends both to Bedrock Opus 4.6 for CLEAN/NOT CLEAN verdict.
 """
@@ -74,7 +74,7 @@ def get_full_inventory():
     try:
         r = clients["ec2"].describe_volumes()
         inventory["ebs_volumes"] = [
-            v["VolumeId"] for v in r["Volumes"] if v["State"] != "in-use" or True
+            v["VolumeId"] for v in r["Volumes"]
         ]
     except Exception:
         inventory["ebs_volumes"] = []

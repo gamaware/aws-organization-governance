@@ -9,7 +9,6 @@ ACTION="${1:-create}"
 PROFILE="${3:-dev}"
 TEAM="team-1"
 NAME="test@iteso.mx"
-TAGS="Key=Team,Value=$TEAM Key=Name,Value=$NAME"
 REGION="us-east-1"
 
 pass() { echo "✅ $1"; }
@@ -26,7 +25,7 @@ if [ "$ACTION" = "create" ]; then
     --attribute-definitions AttributeName=id,AttributeType=S \
     --key-schema AttributeName=id,KeyType=HASH \
     --billing-mode PAY_PER_REQUEST \
-    --tags "$TAGS" \
+    --tags Key=Team,Value="$TEAM" Key=Name,Value="$NAME" \
     --profile "$PROFILE" \
     --region "$REGION" \
     --no-cli-auto-prompt \
@@ -48,7 +47,7 @@ if [ "$ACTION" = "create" ]; then
   info "Creating SNS topic..."
   aws sns create-topic \
     --name "cleanup-test-topic" \
-    --tags "$TAGS" \
+    --tags Key=Team,Value="$TEAM" Key=Name,Value="$NAME" \
     --profile "$PROFILE" \
     --region "$REGION" \
     --no-cli-auto-prompt \
@@ -92,14 +91,17 @@ elif [ "$ACTION" = "destroy" ]; then
     --region "$REGION" \
     --no-cli-auto-prompt \
     --query 'QueueUrl' --output text 2>/dev/null || echo "")
-  if [ "$QUEUE_URL" != "" ] && [ "$QUEUE_URL" != "" ]; then
+  if [ "$QUEUE_URL" != "" ] && [ "$QUEUE_URL" != "None" ]; then
     aws sqs delete-queue --queue-url "$QUEUE_URL" \
       --profile "$PROFILE" --region "$REGION" --no-cli-auto-prompt 2>/dev/null || true
   fi
   pass "SQS queue deleted"
 
+  ACCOUNT_ID=$(aws sts get-caller-identity \
+    --profile "$PROFILE" \
+    --query 'Account' --output text 2>/dev/null)
   aws sns delete-topic \
-    --topic-arn "arn:aws:sns:${REGION}:311141527383:cleanup-test-topic" \
+    --topic-arn "arn:aws:sns:${REGION}:${ACCOUNT_ID}:cleanup-test-topic" \
     --profile "$PROFILE" \
     --region "$REGION" \
     --no-cli-auto-prompt 2>/dev/null || true
