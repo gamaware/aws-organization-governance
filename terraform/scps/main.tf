@@ -16,7 +16,7 @@ resource "aws_organizations_policy" "dev_tagging" {
   name        = "DevTaggingAndAbusePrevention"
   description = "Require Team/Name tags and block abusable resources"
   type        = "SERVICE_CONTROL_POLICY"
-  content     = file("${path.module}/policies/dev-tagging-and-abuse.json")
+  content     = jsonencode(jsondecode(file("${path.module}/policies/dev-tagging-and-abuse.json")))
 }
 
 resource "aws_organizations_policy_attachment" "dev_tagging_attachment" {
