@@ -74,7 +74,7 @@ accounts:
           value: "cleanup-"
       S3Bucket:
         - type: contains
-          value: "cleanup-reports"
+          value: "dev-cleanup-reports"
         - type: contains
           value: "terraform-state"
       SNSTopic:
