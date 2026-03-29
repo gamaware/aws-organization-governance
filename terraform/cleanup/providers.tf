@@ -10,6 +10,8 @@ provider "aws" {
       ManagedBy  = "Terraform"
       Repository = "aws-organization-governance"
       Layer      = "cleanup"
+      Team       = "infrastructure"
+      Name       = "infrastructure@iteso.mx"
     }
   }
 }
