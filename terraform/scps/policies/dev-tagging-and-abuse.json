@@ -6,9 +6,6 @@
       "Effect": "Deny",
       "Action": [
         "ec2:RunInstances",
-        "ec2:CreateVpc",
-        "ec2:CreateSubnet",
-        "ec2:CreateSecurityGroup",
         "rds:CreateDBInstance",
         "rds:CreateDBCluster",
         "lambda:CreateFunction",
@@ -27,8 +24,7 @@
         "cognito-idp:CreateUserPool",
         "states:CreateStateMachine",
         "secretsmanager:CreateSecret",
-        "cloudformation:CreateStack",
-        "cloudfront:CreateDistribution"
+        "cloudformation:CreateStack"
       ],
       "Resource": "*",
       "Condition": {
@@ -42,9 +38,6 @@
       "Effect": "Deny",
       "Action": [
         "ec2:RunInstances",
-        "ec2:CreateVpc",
-        "ec2:CreateSubnet",
-        "ec2:CreateSecurityGroup",
         "rds:CreateDBInstance",
         "rds:CreateDBCluster",
         "lambda:CreateFunction",
@@ -63,8 +56,7 @@
         "cognito-idp:CreateUserPool",
         "states:CreateStateMachine",
         "secretsmanager:CreateSecret",
-        "cloudformation:CreateStack",
-        "cloudfront:CreateDistribution"
+        "cloudformation:CreateStack"
       ],
       "Resource": "*",
       "Condition": {
@@ -78,9 +70,6 @@
       "Effect": "Deny",
       "Action": [
         "ec2:RunInstances",
-        "ec2:CreateVpc",
-        "ec2:CreateSubnet",
-        "ec2:CreateSecurityGroup",
         "rds:CreateDBInstance",
         "rds:CreateDBCluster",
         "lambda:CreateFunction",
@@ -99,8 +88,7 @@
         "cognito-idp:CreateUserPool",
         "states:CreateStateMachine",
         "secretsmanager:CreateSecret",
-        "cloudformation:CreateStack",
-        "cloudfront:CreateDistribution"
+        "cloudformation:CreateStack"
       ],
       "Resource": "*",
       "Condition": {
@@ -125,9 +113,6 @@
       "Effect": "Deny",
       "Action": [
         "ec2:RunInstances",
-        "ec2:CreateVpc",
-        "ec2:CreateSubnet",
-        "ec2:CreateSecurityGroup",
         "rds:CreateDBInstance",
         "rds:CreateDBCluster",
         "lambda:CreateFunction",
@@ -146,8 +131,7 @@
         "cognito-idp:CreateUserPool",
         "states:CreateStateMachine",
         "secretsmanager:CreateSecret",
-        "cloudformation:CreateStack",
-        "cloudfront:CreateDistribution"
+        "cloudformation:CreateStack"
       ],
       "Resource": "*",
       "Condition": {
