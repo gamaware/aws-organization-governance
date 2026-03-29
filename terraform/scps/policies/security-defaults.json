@@ -23,10 +23,9 @@
       }
     },
     {
-      "Sid": "DenyRemoveS3PublicAccessBlock",
+      "Sid": "DenyDeleteS3PublicAccessBlock",
       "Effect": "Deny",
       "Action": [
-        "s3:PutAccountPublicAccessBlock",
         "s3:DeleteAccountPublicAccessBlock"
       ],
       "Resource": "*"
