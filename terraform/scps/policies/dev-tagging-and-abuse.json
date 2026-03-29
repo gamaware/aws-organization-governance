@@ -37,6 +37,12 @@
       "Condition": {
         "Null": {
           "aws:RequestTag/Team": "true"
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/AWSReservedSSO_AdministratorAccess_*",
+            "arn:aws:iam::*:role/OrganizationAccountAccessRole"
+          ]
         }
       }
     },
@@ -76,6 +82,12 @@
       "Condition": {
         "Null": {
           "aws:RequestTag/Name": "true"
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/AWSReservedSSO_AdministratorAccess_*",
+            "arn:aws:iam::*:role/OrganizationAccountAccessRole"
+          ]
         }
       }
     },
@@ -126,6 +138,12 @@
         },
         "Null": {
           "aws:RequestTag/Team": "false"
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/AWSReservedSSO_AdministratorAccess_*",
+            "arn:aws:iam::*:role/OrganizationAccountAccessRole"
+          ]
         }
       }
     },
@@ -168,6 +186,12 @@
         },
         "Null": {
           "aws:RequestTag/Name": "false"
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/AWSReservedSSO_AdministratorAccess_*",
+            "arn:aws:iam::*:role/OrganizationAccountAccessRole"
+          ]
         }
       }
     },
