@@ -247,7 +247,7 @@ resource "aws_iam_role_policy" "lambda_verify" {
       {
         Sid      = "AllowS3Reports"
         Effect   = "Allow"
-        Action   = ["s3:PutObject", "s3:GetObject"]
+        Action   = ["s3:PutObject"]
         Resource = "arn:aws:s3:::cleanup-reports-${var.account_id}/*"
       },
       {
