@@ -21,6 +21,8 @@ reports genuinely new issues.
 | RDS restore bypasses instance class controls | Added `Restore*` actions to `DenyCostlyRDSInstances` |
 | CloudTrail `PutEventSelectors` not denied | Added to `DenyCloudTrailDeletion` actions |
 | `DenyInvalidNameTag`/`DenyInvalidTeamTag` Resource scope | Added Null guard condition and consolidated into generic statements |
+| `cloudfront:CreateDistribution` blocks all CloudFront creation | Removed — CloudFront does not support `aws:RequestTag` at creation |
+| Incomplete VPC tag enforcement | Added `CreateInternetGateway`, `CreateNatGateway`, `CreateRouteTable`, `AllocateAddress` |
 
 ## Accepted Risk
 
@@ -30,6 +32,7 @@ reports genuinely new issues.
 | `DenyAbusableServices` blocks `aws-marketplace:*` entirely | Intentional — Dev OU should not use marketplace |
 | `DenyCloudTrailDeletion` blocks `cloudtrail:UpdateTrail` | Intentional — trail changes go through management account |
 | `ArnLike` with exact ARNs on `DenyAdminPolicyAttachment` | Functionally equivalent to `ArnEquals`, cosmetic only |
+| CloudFront distributions not tag-enforced at creation | `cloudfront:CreateDistribution` does not support `aws:RequestTag` — enforce via Config rule post-creation |
 | Bedrock cross-region exempt for Admin role only | Required for cross-region inference profiles used by Claude Code |
 | Bedrock admin exception allows any region, not a specific allowlist | Cross-region inference profiles route to unpredictable regions |
 | Compound deny on `ec2:RunInstances` across SecurityDefaults and DevTagging SCPs | Both IMDSv2 and Team tag required — intentional defense-in-depth |
