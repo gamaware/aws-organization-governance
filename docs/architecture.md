@@ -314,6 +314,69 @@ All-region wildcards are required because cross-region inference profiles
 (`us.anthropic.claude-sonnet-4-6`) route requests internally across
 multiple US regions.
 
+## Resource Cleanup
+
+Automated resource cleanup for sandbox and development accounts using a
+Step Functions orchestration pipeline. Removes unused or abandoned resources
+to control costs and maintain a clean environment.
+
+### Cleanup Architecture
+
+```mermaid
+graph TB
+    subgraph "Orchestration"
+        SF[Step Functions<br/>State Machine]
+    end
+
+    subgraph "Execution"
+        SF --> CB[CodeBuild<br/>aws-nuke execution]
+        CB --> NC[nuke-config.yaml<br/>Generated from template]
+    end
+
+    subgraph "Notification & Analysis"
+        SF --> LF[Lambda Function<br/>Result processing]
+        LF --> BR[Amazon Bedrock<br/>AI summary generation]
+        BR --> OUT[Cleanup Report]
+    end
+
+    subgraph "Configuration"
+        TPL[nuke-config.yaml.tpl] -->|Terraform templatefile| NC
+    end
+```
+
+### Components
+
+- **Step Functions** — Orchestrates the cleanup workflow end-to-end, coordinating
+  CodeBuild execution, Lambda processing, and error handling with retries
+- **CodeBuild** — Runs aws-nuke against target accounts using the generated
+  nuke configuration, providing isolated execution with proper IAM credentials
+- **Lambda** — Processes cleanup results, formats output, and triggers AI analysis
+  via Bedrock for human-readable cleanup summaries
+- **Bedrock** — Generates AI-powered summaries of cleanup actions, highlighting
+  what was removed, what was preserved, and any anomalies detected
+- **nuke-config.yaml.tpl** — Terraform template that generates account-specific
+  aws-nuke configuration with resource filters and exclusion rules
+
+### Cleanup IAM Roles
+
+Cleanup IAM roles follow least-privilege principles defined in `terraform/cleanup/iam.tf`:
+
+- CodeBuild role scoped to target account actions only
+- Lambda role limited to Bedrock invocation and Step Functions callbacks
+- Step Functions role restricted to invoking the specific CodeBuild project and Lambda function
+
+### CI/CD
+
+The cleanup module has its own pipeline (`cleanup-cicd.yml`) separate from the
+main SCP workflow, preventing cleanup infrastructure changes from affecting
+organization policy deployments.
+
+### Testing
+
+The `cleanup-test-infra.sh` script validates cleanup infrastructure by verifying
+IAM roles, Step Functions state machine configuration, and Lambda function
+deployment before running cleanup operations.
+
 ## End-to-End Deployment Lifecycle
 
 Complete flow from code change to live SCP, showing what happens at each

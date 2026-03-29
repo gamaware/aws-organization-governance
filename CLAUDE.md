@@ -29,6 +29,11 @@ terraform/scps/
   providers.tf                # AWS provider configuration
   versions.tf                 # Terraform and provider versions
   terraform.tfvars.example    # Variable template
+terraform/cleanup/
+  main.tf                     # Cleanup orchestration resources
+  iam.tf                      # IAM roles and policies for cleanup
+  lambda/                     # Lambda function source code
+  nuke-config.yaml.tpl        # aws-nuke configuration template
 docs/
   adr/                        # Architecture Decision Records
   architecture.md             # Architecture and design decisions
@@ -55,6 +60,16 @@ docs/
 - **Org root SCPs**: Organization-wide security (SSO protection, region restriction)
 - Each SCP is a separate JSON file loaded via `file()` in `main.tf`
 - SCP JSON must be valid AWS IAM policy syntax with `Version` and `Statement` array
+
+### Cleanup Module
+
+- **Location:** `terraform/cleanup/`
+- **Key files:** `main.tf`, `iam.tf`, `lambda/` (Lambda function source),
+  `nuke-config.yaml.tpl` (aws-nuke config template)
+- **Naming conventions:** Same as SCPs — Terraform resources in `snake_case`, AWS names in `PascalCase`,
+  files in `kebab-case`
+- **CI/CD:** Separate `cleanup-cicd.yml` workflow (not part of the main SCP pipeline)
+- **Testing:** `cleanup-test-infra.sh` script for validating cleanup infrastructure
 
 ## Git Workflow
 
@@ -118,7 +133,8 @@ Hooks in `.claude/settings.json` automate deterministic actions:
 - All default linting rules are enforced. Fix violations, never suppress them.
 - Markdownlint config: MD013 line length at 120 characters, tables exempt.
   That is the ONLY customization in `.markdownlint.yaml`.
-- `.markdownlintignore` excludes only auto-generated `terraform/scps/README.md`.
+- `.markdownlintignore` excludes auto-generated READMEs: `terraform/scps/README.md`
+  and `terraform/cleanup/README.md`.
 
 ### Allowed exclusions
 

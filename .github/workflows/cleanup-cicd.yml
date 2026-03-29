@@ -1,0 +1,109 @@
+name: Cleanup CI/CD
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch'
+    && format('Cleanup Terraform {0}', inputs.action)
+    || format('Cleanup plan → apply (push: {0})', github.event.head_commit.message) }}
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'terraform/cleanup/**'
+      - '.github/workflows/cleanup-cicd.yml'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - apply
+        default: apply
+
+concurrency:
+  group: cleanup-terraform-state
+  cancel-in-progress: false
+
+jobs:
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.TF_VAR_aws_region }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.14.5"
+
+      - name: Terraform Init
+        working-directory: terraform/cleanup
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: terraform/cleanup
+        run: terraform plan -out=tfplan
+        env:
+          TF_VAR_aws_region: ${{ vars.TF_VAR_aws_region }}
+          TF_VAR_account_id: ${{ vars.CLEANUP_ACCOUNT_ID }}
+          TF_VAR_notification_email: ${{ vars.CLEANUP_NOTIFICATION_EMAIL }}
+
+      - name: Upload Plan Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cleanup-tfplan
+          path: terraform/cleanup/tfplan
+          retention-days: 7
+
+  terraform-apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: terraform-plan
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.TF_VAR_aws_region }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.14.5"
+
+      - name: Terraform Init
+        working-directory: terraform/cleanup
+        run: terraform init
+
+      - name: Download Plan Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cleanup-tfplan
+          path: terraform/cleanup
+
+      - name: Terraform Apply
+        working-directory: terraform/cleanup
+        run: terraform apply tfplan
