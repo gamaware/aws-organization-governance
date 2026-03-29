@@ -58,8 +58,6 @@ resource "aws_iam_role_policy" "codebuild_cleanup" {
           "s3:DeleteObject",
           "s3:DeleteObjectVersion",
           "s3:DeleteBucket",
-          "s3:GetObject",
-          "s3:PutObject",
           "lambda:List*",
           "lambda:GetFunction",
           "lambda:DeleteFunction",
@@ -122,6 +120,15 @@ resource "aws_iam_role_policy" "codebuild_cleanup" {
           "tag:GetTagValues"
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "AllowS3Reports"
+        Effect = "Allow"
+        Action = ["s3:PutObject", "s3:GetObject"]
+        Resource = [
+          "arn:aws:s3:::cleanup-reports-${var.account_id}/*",
+          "arn:aws:s3:::cleanup-reports-${var.account_id}"
+        ]
       },
       {
         Sid    = "AllowCodeBuildLogs"

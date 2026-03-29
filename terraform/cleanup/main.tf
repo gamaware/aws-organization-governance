@@ -151,6 +151,8 @@ resource "aws_codebuild_project" "cleanup" {
     }
   }
 
+  encryption_key = aws_kms_key.cleanup.arn
+
   source {
     type      = "NO_SOURCE"
     buildspec = <<-BUILDSPEC
