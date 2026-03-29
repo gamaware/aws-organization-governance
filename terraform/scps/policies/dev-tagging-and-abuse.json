@@ -2,39 +2,33 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "DenyEC2WithoutTeamTag",
-      "Effect": "Deny",
-      "Action": "ec2:RunInstances",
-      "Resource": [
-        "arn:aws:ec2:*:*:instance/*",
-        "arn:aws:ec2:*:*:volume/*"
-      ],
-      "Condition": {
-        "Null": {
-          "aws:RequestTag/Team": "true"
-        }
-      }
-    },
-    {
-      "Sid": "DenyEC2WithoutNameTag",
-      "Effect": "Deny",
-      "Action": "ec2:RunInstances",
-      "Resource": [
-        "arn:aws:ec2:*:*:instance/*",
-        "arn:aws:ec2:*:*:volume/*"
-      ],
-      "Condition": {
-        "Null": {
-          "aws:RequestTag/Name": "true"
-        }
-      }
-    },
-    {
-      "Sid": "DenyRDSWithoutTeamTag",
+      "Sid": "DenyCreateWithoutTeamTag",
       "Effect": "Deny",
       "Action": [
+        "ec2:RunInstances",
+        "ec2:CreateVpc",
+        "ec2:CreateSubnet",
+        "ec2:CreateSecurityGroup",
         "rds:CreateDBInstance",
-        "rds:CreateDBCluster"
+        "rds:CreateDBCluster",
+        "lambda:CreateFunction",
+        "s3:PutBucketTagging",
+        "dynamodb:CreateTable",
+        "sqs:CreateQueue",
+        "sns:CreateTopic",
+        "ecs:CreateCluster",
+        "ecs:CreateService",
+        "ecr:CreateRepository",
+        "elasticache:CreateCacheCluster",
+        "elasticache:CreateReplicationGroup",
+        "elasticloadbalancing:CreateLoadBalancer",
+        "elasticloadbalancing:CreateTargetGroup",
+        "events:PutRule",
+        "cognito-idp:CreateUserPool",
+        "states:CreateStateMachine",
+        "secretsmanager:CreateSecret",
+        "cloudformation:CreateStack",
+        "cloudfront:CreateDistribution"
       ],
       "Resource": "*",
       "Condition": {
@@ -44,56 +38,34 @@
       }
     },
     {
-      "Sid": "DenyRDSWithoutNameTag",
+      "Sid": "DenyCreateWithoutNameTag",
       "Effect": "Deny",
       "Action": [
+        "ec2:RunInstances",
+        "ec2:CreateVpc",
+        "ec2:CreateSubnet",
+        "ec2:CreateSecurityGroup",
         "rds:CreateDBInstance",
-        "rds:CreateDBCluster"
+        "rds:CreateDBCluster",
+        "lambda:CreateFunction",
+        "s3:PutBucketTagging",
+        "dynamodb:CreateTable",
+        "sqs:CreateQueue",
+        "sns:CreateTopic",
+        "ecs:CreateCluster",
+        "ecs:CreateService",
+        "ecr:CreateRepository",
+        "elasticache:CreateCacheCluster",
+        "elasticache:CreateReplicationGroup",
+        "elasticloadbalancing:CreateLoadBalancer",
+        "elasticloadbalancing:CreateTargetGroup",
+        "events:PutRule",
+        "cognito-idp:CreateUserPool",
+        "states:CreateStateMachine",
+        "secretsmanager:CreateSecret",
+        "cloudformation:CreateStack",
+        "cloudfront:CreateDistribution"
       ],
-      "Resource": "*",
-      "Condition": {
-        "Null": {
-          "aws:RequestTag/Name": "true"
-        }
-      }
-    },
-    {
-      "Sid": "DenyLambdaWithoutTeamTag",
-      "Effect": "Deny",
-      "Action": "lambda:CreateFunction",
-      "Resource": "*",
-      "Condition": {
-        "Null": {
-          "aws:RequestTag/Team": "true"
-        }
-      }
-    },
-    {
-      "Sid": "DenyLambdaWithoutNameTag",
-      "Effect": "Deny",
-      "Action": "lambda:CreateFunction",
-      "Resource": "*",
-      "Condition": {
-        "Null": {
-          "aws:RequestTag/Name": "true"
-        }
-      }
-    },
-    {
-      "Sid": "DenyS3TaggingWithoutTeamTag",
-      "Effect": "Deny",
-      "Action": "s3:PutBucketTagging",
-      "Resource": "*",
-      "Condition": {
-        "Null": {
-          "aws:RequestTag/Team": "true"
-        }
-      }
-    },
-    {
-      "Sid": "DenyS3TaggingWithoutNameTag",
-      "Effect": "Deny",
-      "Action": "s3:PutBucketTagging",
       "Resource": "*",
       "Condition": {
         "Null": {
@@ -106,10 +78,29 @@
       "Effect": "Deny",
       "Action": [
         "ec2:RunInstances",
+        "ec2:CreateVpc",
+        "ec2:CreateSubnet",
+        "ec2:CreateSecurityGroup",
         "rds:CreateDBInstance",
         "rds:CreateDBCluster",
         "lambda:CreateFunction",
-        "s3:PutBucketTagging"
+        "s3:PutBucketTagging",
+        "dynamodb:CreateTable",
+        "sqs:CreateQueue",
+        "sns:CreateTopic",
+        "ecs:CreateCluster",
+        "ecs:CreateService",
+        "ecr:CreateRepository",
+        "elasticache:CreateCacheCluster",
+        "elasticache:CreateReplicationGroup",
+        "elasticloadbalancing:CreateLoadBalancer",
+        "elasticloadbalancing:CreateTargetGroup",
+        "events:PutRule",
+        "cognito-idp:CreateUserPool",
+        "states:CreateStateMachine",
+        "secretsmanager:CreateSecret",
+        "cloudformation:CreateStack",
+        "cloudfront:CreateDistribution"
       ],
       "Resource": "*",
       "Condition": {
@@ -123,6 +114,9 @@
             "team-6",
             "team-7"
           ]
+        },
+        "Null": {
+          "aws:RequestTag/Team": "false"
         }
       }
     },
@@ -131,15 +125,37 @@
       "Effect": "Deny",
       "Action": [
         "ec2:RunInstances",
+        "ec2:CreateVpc",
+        "ec2:CreateSubnet",
+        "ec2:CreateSecurityGroup",
         "rds:CreateDBInstance",
         "rds:CreateDBCluster",
         "lambda:CreateFunction",
-        "s3:PutBucketTagging"
+        "s3:PutBucketTagging",
+        "dynamodb:CreateTable",
+        "sqs:CreateQueue",
+        "sns:CreateTopic",
+        "ecs:CreateCluster",
+        "ecs:CreateService",
+        "ecr:CreateRepository",
+        "elasticache:CreateCacheCluster",
+        "elasticache:CreateReplicationGroup",
+        "elasticloadbalancing:CreateLoadBalancer",
+        "elasticloadbalancing:CreateTargetGroup",
+        "events:PutRule",
+        "cognito-idp:CreateUserPool",
+        "states:CreateStateMachine",
+        "secretsmanager:CreateSecret",
+        "cloudformation:CreateStack",
+        "cloudfront:CreateDistribution"
       ],
       "Resource": "*",
       "Condition": {
         "StringNotLike": {
           "aws:RequestTag/Name": "*@iteso.mx"
+        },
+        "Null": {
+          "aws:RequestTag/Name": "false"
         }
       }
     },

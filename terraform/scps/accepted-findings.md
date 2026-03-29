@@ -20,6 +20,7 @@ reports genuinely new issues.
 | RDS `StringNotLike` on absent condition key | Added `Null` check so deny only fires when class IS present |
 | RDS restore bypasses instance class controls | Added `Restore*` actions to `DenyCostlyRDSInstances` |
 | CloudTrail `PutEventSelectors` not denied | Added to `DenyCloudTrailDeletion` actions |
+| `DenyInvalidNameTag`/`DenyInvalidTeamTag` Resource scope | Added Null guard condition and consolidated into generic statements |
 
 ## Accepted Risk
 
@@ -34,7 +35,7 @@ reports genuinely new issues.
 | Compound deny on `ec2:RunInstances` across SecurityDefaults and DevTagging SCPs | Both IMDSv2 and Team tag required — intentional defense-in-depth |
 | SecurityDefaults SCP attached to Dev OU only, not org root | Intentional — testing in Dev before org-wide rollout |
 | Region list drift risk between Bedrock and main region deny statements | Acceptable until multiple regions are needed |
-| S3 `PutBucketTagging` Name tag requires `@iteso.mx` format | Intentional — student identification |
+| `PutBucketTagging` and all taggable actions require Name tag with `@iteso.mx` format | Intentional — student identification across all enforced services |
 | `DenyRootUserActions` uses `StringLike` | Correct — wildcard `*` for account ID requires `StringLike` |
 | `t4g.*` ARM instances allowed in EC2 restrictions | Intentional — ARM instances are cost-effective |
 | Seven overlapping `ec2:RunInstances` deny conditions | Intentional defense-in-depth, developer docs explain requirements |
@@ -65,4 +66,3 @@ reports genuinely new issues.
 | IAM inline policy escalation paths | P3 | `PutUserPolicy`, `PutRolePolicy`, `CreatePolicyVersion` unblocked |
 | `ec2:CopySnapshot` data exfiltration | P3 | Snapshots can be copied to another account |
 | Global services missing from region `NotAction` | P3 | `sso:*`, `identitystore:*`, `securityhub:*`, `guardduty:*`, etc. |
-| `DenyInvalidNameTag`/`DenyInvalidTeamTag` Resource scope | P2 | `Resource: "*"` on `ec2:RunInstances` may block via non-taggable resource legs (AMI, subnet) |
