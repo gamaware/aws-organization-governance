@@ -13,12 +13,13 @@ within the restrictions.
 ## Required Tags
 
 Almost every resource you create **must** have these two tags.
-Enforced services include: EC2 instances, RDS databases, Lambda
-functions, S3 buckets (via tagging), DynamoDB tables, SQS queues,
-SNS topics, ECS clusters and services, ECR repositories, ElastiCache
-clusters, load balancers, target groups, EventBridge rules, Cognito
-user pools, Step Functions state machines, Secrets Manager secrets,
-and CloudFormation stacks.
+Enforced services include: EC2 instances, VPCs, subnets, security
+groups, RDS databases, Lambda functions, S3 buckets (via tagging),
+DynamoDB tables, SQS queues, SNS topics, ECS clusters and services,
+ECR repositories, ElastiCache clusters, load balancers, target groups,
+EventBridge rules, Cognito user pools, Step Functions state machines,
+Secrets Manager secrets, CloudFormation stacks, and CloudFront
+distributions.
 
 | Tag    | Value            | Example             |
 |--------|------------------|---------------------|
@@ -29,10 +30,9 @@ Valid team values: `team-1` through `team-7`
 
 **If you forget either tag, the resource creation will be denied.**
 
-> **Tip:** VPC networking resources (VPCs, subnets, security groups) do
-> not require tags at creation, but tagging them is recommended for
-> tracking. If you use CloudFormation or Terraform, apply stack-level
-> tags to cover all nested resources automatically.
+> **Note:** VPC resources (VPCs, subnets, security groups) require
+> tags just like any other resource. When creating networking
+> infrastructure, include `Team` and `Name` tags.
 
 ### How to tag resources
 
