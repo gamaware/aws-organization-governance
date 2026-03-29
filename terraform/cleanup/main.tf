@@ -12,7 +12,7 @@ resource "aws_kms_alias" "cleanup" {
 
 # S3 bucket for cleanup reports and AI analysis
 resource "aws_s3_bucket" "cleanup_reports" {
-  bucket        = "cleanup-reports-${var.account_id}"
+  bucket        = "dev-cleanup-reports-${var.account_id}"
   force_destroy = true
 }
 

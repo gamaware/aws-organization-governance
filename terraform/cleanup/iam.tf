@@ -126,8 +126,8 @@ resource "aws_iam_role_policy" "codebuild_cleanup" {
         Effect = "Allow"
         Action = ["s3:PutObject", "s3:GetObject"]
         Resource = [
-          "arn:aws:s3:::cleanup-reports-${var.account_id}/*",
-          "arn:aws:s3:::cleanup-reports-${var.account_id}"
+          "arn:aws:s3:::dev-cleanup-reports-${var.account_id}/*",
+          "arn:aws:s3:::dev-cleanup-reports-${var.account_id}"
         ]
       },
       {
@@ -248,7 +248,7 @@ resource "aws_iam_role_policy" "lambda_verify" {
         Sid      = "AllowS3Reports"
         Effect   = "Allow"
         Action   = ["s3:PutObject"]
-        Resource = "arn:aws:s3:::cleanup-reports-${var.account_id}/*"
+        Resource = "arn:aws:s3:::dev-cleanup-reports-${var.account_id}/*"
       },
       {
         Sid      = "AllowSNS"
