@@ -5,7 +5,8 @@ set -euo pipefail
 # Required env vars: ORG_ID, EXPECTED_ORG_ID, ROOT_ID, EXPECTED_DEV_OU,
 #                    DEV_SCP_ID, DEV_SCP_ARN, SSO_SCP_ID, SSO_SCP_ARN,
 #                    DEV_TAGGING_SCP_ID, DEV_TAGGING_SCP_ARN,
-#                    REGION_SCP_ID, REGION_SCP_ARN
+#                    REGION_SCP_ID, REGION_SCP_ARN,
+#                    SECURITY_DEFAULTS_SCP_ID, SECURITY_DEFAULTS_SCP_ARN
 
 fail() { echo "❌ $1"; exit 1; }
 pass() { echo "✅ $1"; }
@@ -139,6 +140,39 @@ echo "$REGION_CONTENT" | grep -q "aws:RequestedRegion" \
   || fail "Region condition not found in Region Restriction SCP"
 pass "Region restriction condition validated"
 
+# --- Security Defaults SCP ---
+[ "$SECURITY_DEFAULTS_SCP_ID" = "" ] && fail "Could not get Security Defaults SCP ID"
+
+SEC_EXISTS=$(aws organizations describe-policy \
+  --policy-id "$SECURITY_DEFAULTS_SCP_ID" \
+  --query 'Policy.PolicySummary.Id' \
+  --output text 2>/dev/null || echo "")
+[ "$SEC_EXISTS" = "" ] && fail "Security Defaults SCP not found in AWS"
+pass "Security Defaults SCP exists: ${SECURITY_DEFAULTS_SCP_ID}"
+
+SEC_ATTACHED=$(aws organizations list-policies-for-target \
+  --target-id "$EXPECTED_DEV_OU" \
+  --filter SERVICE_CONTROL_POLICY \
+  --query "Policies[?Id==\`${SECURITY_DEFAULTS_SCP_ID}\`].Id" \
+  --output text)
+[ "$SEC_ATTACHED" = "" ] && fail "Security Defaults SCP not attached to Dev OU"
+pass "Security Defaults SCP attached to Dev OU"
+
+SEC_CONTENT=$(aws organizations describe-policy \
+  --policy-id "$SECURITY_DEFAULTS_SCP_ID" \
+  --query 'Policy.Content' \
+  --output text)
+
+echo "$SEC_CONTENT" | grep -q "DenyDisableEBSEncryption" \
+  || fail "EBS encryption deny not found"
+pass "EBS encryption deny validated"
+echo "$SEC_CONTENT" | grep -q "DenyIMDSv1" \
+  || fail "IMDSv1 deny not found"
+pass "IMDSv1 deny validated"
+echo "$SEC_CONTENT" | grep -q "DenyDeleteS3PublicAccessBlock" \
+  || fail "S3 public access block deny not found"
+pass "S3 public access block deny validated"
+
 echo ""
 echo "✅ All validations passed!"
 echo "📊 Deployment Summary:"
@@ -149,4 +183,5 @@ echo "  - Dev SCP: ${DEV_SCP_ID} (${DEV_SCP_ARN})"
 echo "  - Tagging SCP: ${DEV_TAGGING_SCP_ID} (${DEV_TAGGING_SCP_ARN})"
 echo "  - SSO Protection SCP: ${SSO_SCP_ID} (${SSO_SCP_ARN})"
 echo "  - Region Restriction SCP: ${REGION_SCP_ID} (${REGION_SCP_ARN})"
+echo "  - Security Defaults SCP: ${SECURITY_DEFAULTS_SCP_ID} (${SECURITY_DEFAULTS_SCP_ARN})"
 echo "  - Status: Deployed and validated"
