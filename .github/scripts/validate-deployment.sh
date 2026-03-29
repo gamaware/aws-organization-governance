@@ -115,9 +115,12 @@ pass "ITESO email tag enforcement validated"
 echo "$TAGGING_CONTENT" | grep -q "dynamodb:CreateTable" \
   || fail "Expanded service tag enforcement not found (DynamoDB)"
 pass "Expanded service tag enforcement validated"
-echo "$TAGGING_CONTENT" | grep -q '"aws:RequestTag/Team": "false"' \
+echo "$TAGGING_CONTENT" | grep -Eq '"aws:RequestTag/Team"[[:space:]]*:[[:space:]]*"false"' \
   || fail "Null guard condition not found on Team tag"
-pass "Null guard condition validated"
+pass "Null guard condition validated (Team)"
+echo "$TAGGING_CONTENT" | grep -Eq '"aws:RequestTag/Name"[[:space:]]*:[[:space:]]*"false"' \
+  || fail "Null guard condition not found on Name tag"
+pass "Null guard condition validated (Name)"
 
 # --- Region Restriction SCP ---
 [ "$REGION_SCP_ID" = "" ] && fail "Could not get Region Restriction SCP ID"
