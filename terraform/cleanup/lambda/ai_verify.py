@@ -8,10 +8,14 @@ Sends both to Bedrock Opus 4.6 for CLEAN/NOT CLEAN verdict.
 """
 
 import json
+import logging
 import os
 from datetime import datetime, timezone
 
 import boto3
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 REPORTS_BUCKET = os.environ["REPORTS_BUCKET"]
 ACCOUNT_ID = os.environ["ACCOUNT_ID"]
@@ -68,24 +72,27 @@ def get_full_inventory():
             for res in r["Reservations"]
             for i in res["Instances"]
         ]
-    except Exception:
-        inventory["ec2_instances"] = []
+    except Exception as e:
+        logger.error("Failed to scan ec2_instances: %s", e)
+        inventory["ec2_instances"] = {"error": str(e)}
 
     try:
         r = clients["ec2"].describe_volumes()
         inventory["ebs_volumes"] = [
             v["VolumeId"] for v in r["Volumes"]
         ]
-    except Exception:
-        inventory["ebs_volumes"] = []
+    except Exception as e:
+        logger.error("Failed to scan ebs_volumes: %s", e)
+        inventory["ebs_volumes"] = {"error": str(e)}
 
     try:
         r = clients["ec2"].describe_vpcs(
             Filters=[{"Name": "isDefault", "Values": ["false"]}]
         )
         inventory["vpcs"] = [v["VpcId"] for v in r["Vpcs"]]
-    except Exception:
-        inventory["vpcs"] = []
+    except Exception as e:
+        logger.error("Failed to scan vpcs: %s", e)
+        inventory["vpcs"] = {"error": str(e)}
 
     try:
         r = clients["ec2"].describe_security_groups()
@@ -94,16 +101,18 @@ def get_full_inventory():
             for sg in r["SecurityGroups"]
             if sg["GroupName"] != "default"
         ]
-    except Exception:
-        inventory["security_groups"] = []
+    except Exception as e:
+        logger.error("Failed to scan security_groups: %s", e)
+        inventory["security_groups"] = {"error": str(e)}
 
     try:
         r = clients["rds"].describe_db_instances()
         inventory["rds_instances"] = [
             db["DBInstanceIdentifier"] for db in r["DBInstances"]
         ]
-    except Exception:
-        inventory["rds_instances"] = []
+    except Exception as e:
+        logger.error("Failed to scan rds_instances: %s", e)
+        inventory["rds_instances"] = {"error": str(e)}
 
     try:
         r = clients["s3"].list_buckets()
@@ -113,8 +122,9 @@ def get_full_inventory():
             if "cleanup-reports" not in b["Name"]
             and "terraform-state" not in b["Name"]
         ]
-    except Exception:
-        inventory["s3_buckets"] = []
+    except Exception as e:
+        logger.error("Failed to scan s3_buckets: %s", e)
+        inventory["s3_buckets"] = {"error": str(e)}
 
     try:
         r = clients["lambda"].list_functions()
@@ -123,42 +133,48 @@ def get_full_inventory():
             for f in r["Functions"]
             if "cleanup-" not in f["FunctionName"]
         ]
-    except Exception:
-        inventory["lambda_functions"] = []
+    except Exception as e:
+        logger.error("Failed to scan lambda_functions: %s", e)
+        inventory["lambda_functions"] = {"error": str(e)}
 
     try:
         r = clients["dynamodb"].list_tables()
         inventory["dynamodb_tables"] = r["TableNames"]
-    except Exception:
-        inventory["dynamodb_tables"] = []
+    except Exception as e:
+        logger.error("Failed to scan dynamodb_tables: %s", e)
+        inventory["dynamodb_tables"] = {"error": str(e)}
 
     try:
         r = clients["ecs"].list_clusters()
         inventory["ecs_clusters"] = r["clusterArns"]
-    except Exception:
-        inventory["ecs_clusters"] = []
+    except Exception as e:
+        logger.error("Failed to scan ecs_clusters: %s", e)
+        inventory["ecs_clusters"] = {"error": str(e)}
 
     try:
         r = clients["ecr"].describe_repositories()
         inventory["ecr_repositories"] = [
             repo["repositoryName"] for repo in r["repositories"]
         ]
-    except Exception:
-        inventory["ecr_repositories"] = []
+    except Exception as e:
+        logger.error("Failed to scan ecr_repositories: %s", e)
+        inventory["ecr_repositories"] = {"error": str(e)}
 
     try:
         r = clients["elbv2"].describe_load_balancers()
         inventory["load_balancers"] = [
             lb["LoadBalancerName"] for lb in r["LoadBalancers"]
         ]
-    except Exception:
-        inventory["load_balancers"] = []
+    except Exception as e:
+        logger.error("Failed to scan load_balancers: %s", e)
+        inventory["load_balancers"] = {"error": str(e)}
 
     try:
         r = clients["sqs"].list_queues()
         inventory["sqs_queues"] = r.get("QueueUrls", [])
-    except Exception:
-        inventory["sqs_queues"] = []
+    except Exception as e:
+        logger.error("Failed to scan sqs_queues: %s", e)
+        inventory["sqs_queues"] = {"error": str(e)}
 
     try:
         r = clients["sns_client"].list_topics()
@@ -167,8 +183,9 @@ def get_full_inventory():
             for t in r["Topics"]
             if "cleanup-notifications" not in t["TopicArn"]
         ]
-    except Exception:
-        inventory["sns_topics"] = []
+    except Exception as e:
+        logger.error("Failed to scan sns_topics: %s", e)
+        inventory["sns_topics"] = {"error": str(e)}
 
     try:
         r = clients["events"].list_rules()
@@ -177,8 +194,9 @@ def get_full_inventory():
             for rule in r["Rules"]
             if "StepFunctions" not in rule["Name"]
         ]
-    except Exception:
-        inventory["eventbridge_rules"] = []
+    except Exception as e:
+        logger.error("Failed to scan eventbridge_rules: %s", e)
+        inventory["eventbridge_rules"] = {"error": str(e)}
 
     try:
         r = clients["logs"].describe_log_groups()
@@ -188,14 +206,16 @@ def get_full_inventory():
             if "/aws/codebuild/resource-cleanup" not in lg["logGroupName"]
             and "/aws/lambda/cleanup-" not in lg["logGroupName"]
         ]
-    except Exception:
-        inventory["log_groups"] = []
+    except Exception as e:
+        logger.error("Failed to scan log_groups: %s", e)
+        inventory["log_groups"] = {"error": str(e)}
 
     try:
         r = clients["secretsmanager"].list_secrets()
         inventory["secrets"] = [s["Name"] for s in r["SecretList"]]
-    except Exception:
-        inventory["secrets"] = []
+    except Exception as e:
+        logger.error("Failed to scan secrets: %s", e)
+        inventory["secrets"] = {"error": str(e)}
 
     return inventory
 
@@ -208,8 +228,18 @@ def invoke_bedrock(tagged_resources, inventory):
         accepted_findings = base64.b64decode(
             os.environ.get("ACCEPTED_FINDINGS", "")
         ).decode("utf-8")
-    except Exception:
-        pass
+    except Exception as e:
+        logger.error("Failed to decode accepted findings: %s", e)
+
+    scan_errors = {k: v["error"] for k, v in inventory.items() if isinstance(v, dict) and "error" in v}
+    scan_error_note = ""
+    if scan_errors:
+        scan_error_note = f"""
+## Scan Errors
+The following resource types failed to scan. Treat them as UNKNOWN (not clean):
+
+{json.dumps(scan_errors, indent=2)}
+"""
 
     prompt = f"""You are auditing an AWS account after a resource cleanup operation.
 
@@ -227,6 +257,7 @@ These resources still have team tags after cleanup. If any exist, cleanup FAILED
 All resources currently in the account (infrastructure excluded where possible):
 
 {json.dumps(inventory, indent=2)}
+{scan_error_note}
 
 ## Previously Accepted Findings (skip these)
 {accepted_findings}
@@ -277,7 +308,11 @@ def handler(event, context):
         "execution_id": execution_id,
         "verdict": verdict,
         "tagged_resources_remaining": len(tagged),
-        "inventory_summary": {k: len(v) for k, v in inventory.items()},
+        "scan_errors": {k: v["error"] for k, v in inventory.items() if isinstance(v, dict) and "error" in v},
+        "inventory_summary": {
+            k: "error" if isinstance(v, dict) and "error" in v else len(v)
+            for k, v in inventory.items()
+        },
         "ai_analysis": analysis,
     }
 

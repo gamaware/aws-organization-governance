@@ -6,7 +6,21 @@ set -euo pipefail
 # Usage: ./cleanup-test-infra.sh [create|destroy] [--profile PROFILE]
 
 ACTION="${1:-create}"
-PROFILE="${3:-dev}"
+shift || true
+PROFILE="dev"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --profile)
+      PROFILE="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown option: $1"
+      echo "Usage: $0 [create|destroy] [--profile PROFILE]"
+      exit 1
+      ;;
+  esac
+done
 TEAM="team-1"
 NAME="test@iteso.mx"
 REGION="us-east-1"
@@ -20,19 +34,24 @@ if [ "$ACTION" = "create" ]; then
 
   # DynamoDB table
   info "Creating DynamoDB table..."
-  aws dynamodb create-table \
-    --table-name "cleanup-test-table" \
-    --attribute-definitions AttributeName=id,AttributeType=S \
-    --key-schema AttributeName=id,KeyType=HASH \
-    --billing-mode PAY_PER_REQUEST \
-    --tags Key=Team,Value="$TEAM" Key=Name,Value="$NAME" \
-    --profile "$PROFILE" \
-    --region "$REGION" \
-    --no-cli-auto-prompt \
-    --output text > /dev/null 2>&1 || true
+  if aws dynamodb describe-table --table-name "cleanup-test-table" \
+    --profile "$PROFILE" --region "$REGION" --no-cli-auto-prompt > /dev/null 2>&1; then
+    info "DynamoDB table already exists, skipping"
+  else
+    aws dynamodb create-table \
+      --table-name "cleanup-test-table" \
+      --attribute-definitions AttributeName=id,AttributeType=S \
+      --key-schema AttributeName=id,KeyType=HASH \
+      --billing-mode PAY_PER_REQUEST \
+      --tags Key=Team,Value="$TEAM" Key=Name,Value="$NAME" \
+      --profile "$PROFILE" \
+      --region "$REGION" \
+      --no-cli-auto-prompt \
+      --output text > /dev/null 2>&1
+  fi
   pass "DynamoDB table created"
 
-  # SQS queue
+  # SQS queue (create-queue is idempotent for same attributes)
   info "Creating SQS queue..."
   QUEUE_URL=$(aws sqs create-queue \
     --queue-name "cleanup-test-queue" \
@@ -40,10 +59,10 @@ if [ "$ACTION" = "create" ]; then
     --profile "$PROFILE" \
     --region "$REGION" \
     --no-cli-auto-prompt \
-    --query 'QueueUrl' --output text 2>/dev/null || echo "exists")
+    --query 'QueueUrl' --output text 2>&1)
   pass "SQS queue created: $QUEUE_URL"
 
-  # SNS topic
+  # SNS topic (create-topic is idempotent)
   info "Creating SNS topic..."
   aws sns create-topic \
     --name "cleanup-test-topic" \
@@ -51,7 +70,7 @@ if [ "$ACTION" = "create" ]; then
     --profile "$PROFILE" \
     --region "$REGION" \
     --no-cli-auto-prompt \
-    --output text > /dev/null 2>&1 || true
+    --output text > /dev/null 2>&1
   pass "SNS topic created"
 
   # S3 bucket
