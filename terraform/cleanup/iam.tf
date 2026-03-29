@@ -327,9 +327,11 @@ resource "aws_iam_role_policy" "step_functions_orchestration" {
         Action = [
           "events:PutTargets",
           "events:PutRule",
-          "events:DescribeRule"
+          "events:DescribeRule",
+          "events:DeleteRule",
+          "events:RemoveTargets"
         ]
-        Resource = "arn:aws:events:${var.aws_region}:${var.account_id}:rule/StepFunctionsGetBuildStatusRule-*"
+        Resource = "arn:aws:events:${var.aws_region}:${var.account_id}:rule/*"
       }
     ]
   })
