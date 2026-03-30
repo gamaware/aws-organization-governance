@@ -160,27 +160,56 @@ resource "aws_codebuild_project" "cleanup" {
               TEAMS=$(echo "$TEAM_TAGS" | tr -d '[]"' | tr ',' ' ')
               echo "Scanning for tagged resources..."
               > /tmp/nuke-output.log
+              > /tmp/all-arns.txt
 
+              # Phase 0: Collect ALL tagged resources
               for TEAM in $TEAMS; do
                 echo "--- Scanning Team=$TEAM ---" | tee -a /tmp/nuke-output.log
-                RESOURCES=$(aws resourcegroupstaggingapi get-resources \
+                aws resourcegroupstaggingapi get-resources \
                   --tag-filters Key=Team,Values=$TEAM \
                   --query 'ResourceTagMappingList[].ResourceARN' \
-                  --output text 2>/dev/null || echo "")
+                  --output text 2>/dev/null | tr '\t' '\n' >> /tmp/all-arns.txt
+              done
 
-                if [ -z "$RESOURCES" ]; then
-                  echo "  No resources found for $TEAM" | tee -a /tmp/nuke-output.log
-                  continue
+              TOTAL_FOUND=$(wc -l < /tmp/all-arns.txt | tr -d ' ')
+              echo "Found $TOTAL_FOUND tagged resources" | tee -a /tmp/nuke-output.log
+
+              if [ "$TOTAL_FOUND" = "0" ]; then
+                echo "Nothing to clean" | tee -a /tmp/nuke-output.log
+              elif [ -n "$DRY_RUN" ]; then
+                # Dry-run: just list
+                while read ARN; do
+                  [ -n "$ARN" ] && echo "  [DRY-RUN] would remove: $ARN" | tee -a /tmp/nuke-output.log
+                done < /tmp/all-arns.txt
+              else
+                # Phase 1: Terminate EC2 instances first
+                echo "=== Phase 1: Terminating EC2 instances ===" | tee -a /tmp/nuke-output.log
+                INSTANCE_IDS=""
+                while read ARN; do
+                  if echo "$ARN" | grep -q ":instance/"; then
+                    ID=$(echo "$ARN" | rev | cut -d/ -f1 | rev)
+                    INSTANCE_IDS="$INSTANCE_IDS $ID"
+                    echo "  [DELETE] terminating: $ARN" | tee -a /tmp/nuke-output.log
+                  fi
+                done < /tmp/all-arns.txt
+
+                if [ -n "$INSTANCE_IDS" ]; then
+                  aws ec2 terminate-instances --instance-ids $INSTANCE_IDS 2>&1 | tee -a /tmp/nuke-output.log
+                  echo "Waiting for instance termination..." | tee -a /tmp/nuke-output.log
+                  aws ec2 wait instance-terminated --instance-ids $INSTANCE_IDS 2>/dev/null || sleep 60
+                  echo "Instances terminated" | tee -a /tmp/nuke-output.log
                 fi
 
-                for ARN in $RESOURCES; do
+                # Phase 2: Delete everything else
+                echo "=== Phase 2: Deleting remaining resources ===" | tee -a /tmp/nuke-output.log
+                while read ARN; do
+                  [ -z "$ARN" ] && continue
+                  # Skip instances (already handled)
+                  echo "$ARN" | grep -q ":instance/" && continue
+
                   TYPE=$(echo "$ARN" | cut -d: -f3)
                   RESOURCE_ID=$(echo "$ARN" | rev | cut -d/ -f1 | rev)
-
-                  if [ -n "$DRY_RUN" ]; then
-                    echo "  [DRY-RUN] would remove: $ARN" | tee -a /tmp/nuke-output.log
-                  else
-                    echo "  [DELETE] removing: $ARN" | tee -a /tmp/nuke-output.log
+                  echo "  [DELETE] removing: $ARN" | tee -a /tmp/nuke-output.log
                     case "$TYPE" in
                       ec2)
                         RTYPE=$(echo "$ARN" | cut -d: -f6 | cut -d/ -f1)
@@ -294,22 +323,13 @@ resource "aws_codebuild_project" "cleanup" {
                       *)
                         echo "    [SKIP] unsupported service: $TYPE ($ARN)" | tee -a /tmp/nuke-output.log ;;
                     esac
-                  fi
-                done
-              done
-
-              # Wait for EC2 terminations to complete before final count
-              TERMINATED=$(grep -o 'terminate-instances.*i-[a-z0-9]*' /tmp/nuke-output.log | grep -o 'i-[a-z0-9]*' | sort -u | tr '\n' ' ')
-              if [ -n "$TERMINATED" ]; then
-                echo "Waiting for EC2 terminations: $TERMINATED" | tee -a /tmp/nuke-output.log
-                aws ec2 wait instance-terminated --instance-ids $TERMINATED 2>/dev/null || true
-                echo "EC2 terminations complete" | tee -a /tmp/nuke-output.log
+                done < /tmp/all-arns.txt
               fi
 
               echo ""
               echo "=== Cleanup complete ==="
               TOTAL=$(grep -c "would remove\|removing:" /tmp/nuke-output.log || echo 0)
-              echo "Total resources: $TOTAL" | tee -a /tmp/nuke-output.log
+              echo "Total resources processed: $TOTAL" | tee -a /tmp/nuke-output.log
         post_build:
           on-failure: CONTINUE
           commands:
