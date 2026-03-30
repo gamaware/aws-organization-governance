@@ -184,20 +184,16 @@ resource "aws_codebuild_project" "cleanup" {
               else
                 # Phase 1: Terminate EC2 instances first
                 echo "=== Phase 1: Terminating EC2 instances ===" | tee -a /tmp/nuke-output.log
-                INSTANCE_IDS=""
-                while read ARN; do
-                  if echo "$ARN" | grep -q ":instance/"; then
-                    ID=$(echo "$ARN" | rev | cut -d/ -f1 | rev)
-                    INSTANCE_IDS="$INSTANCE_IDS $ID"
-                    echo "  [DELETE] terminating: $ARN" | tee -a /tmp/nuke-output.log
-                  fi
-                done < /tmp/all-arns.txt
+                INSTANCE_IDS=$(grep ":instance/" /tmp/all-arns.txt | rev | cut -d/ -f1 | rev | tr '\n' ' ')
 
                 if [ -n "$INSTANCE_IDS" ]; then
+                  echo "  Terminating: $INSTANCE_IDS" | tee -a /tmp/nuke-output.log
                   aws ec2 terminate-instances --instance-ids $INSTANCE_IDS 2>&1 | tee -a /tmp/nuke-output.log
                   echo "Waiting for instance termination..." | tee -a /tmp/nuke-output.log
-                  aws ec2 wait instance-terminated --instance-ids $INSTANCE_IDS 2>/dev/null || sleep 60
+                  aws ec2 wait instance-terminated --instance-ids $INSTANCE_IDS 2>/dev/null || sleep 120
                   echo "Instances terminated" | tee -a /tmp/nuke-output.log
+                else
+                  echo "  No EC2 instances to terminate" | tee -a /tmp/nuke-output.log
                 fi
 
                 # Phase 2: Delete everything else

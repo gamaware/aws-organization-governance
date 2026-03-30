@@ -83,6 +83,7 @@ resource "aws_iam_role_policy" "codebuild_cleanup" {
           "apigateway:GET",
           "apigateway:DELETE",
           "sqs:List*",
+          "sqs:GetQueueUrl",
           "sqs:GetQueueAttributes",
           "sqs:DeleteQueue",
           "sns:List*",
