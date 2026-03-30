@@ -150,30 +150,53 @@ resource "aws_iam_role_policy" "codebuild_cleanup" {
         Resource = "*"
       },
       {
-        Sid    = "AllowIAMReadOnly"
+        Sid    = "AllowIAMCleanup"
         Effect = "Allow"
         Action = [
           "iam:ListAccountAliases",
           "iam:GetRole",
+          "iam:GetUser",
+          "iam:GetPolicy",
           "iam:ListRoles",
           "iam:ListPolicies",
           "iam:ListUsers",
-          "iam:ListGroups"
+          "iam:ListGroups",
+          "iam:ListRoleTags",
+          "iam:ListUserTags",
+          "iam:ListPolicyTags",
+          "iam:ListRolePolicies",
+          "iam:ListAttachedRolePolicies",
+          "iam:ListUserPolicies",
+          "iam:ListAttachedUserPolicies",
+          "iam:ListGroupsForUser",
+          "iam:ListAccessKeys",
+          "iam:ListInstanceProfilesForRole",
+          "iam:ListPolicyVersions",
+          "iam:ListEntitiesForPolicy",
+          "iam:DeleteRole",
+          "iam:DeleteUser",
+          "iam:DeletePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:DeleteUserPolicy",
+          "iam:DeleteAccessKey",
+          "iam:DeletePolicyVersion",
+          "iam:DeleteInstanceProfile",
+          "iam:DetachRolePolicy",
+          "iam:DetachUserPolicy",
+          "iam:RemoveRoleFromInstanceProfile",
+          "iam:RemoveUserFromGroup"
         ]
         Resource = "*"
       },
       {
-        Sid    = "DenyIAMWrite"
+        Sid    = "DenyIAMEscalation"
         Effect = "Deny"
         Action = [
           "iam:Create*",
-          "iam:Delete*",
           "iam:Put*",
           "iam:Attach*",
-          "iam:Detach*",
           "iam:Update*",
           "iam:Add*",
-          "iam:Remove*",
           "iam:PassRole"
         ]
         Resource = "*"
