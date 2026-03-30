@@ -40,8 +40,9 @@
         },
         "ArnNotLike": {
           "aws:PrincipalArn": [
-            "arn:aws:iam::*:role/AWSReservedSSO_AdministratorAccess_*",
-            "arn:aws:iam::*:role/OrganizationAccountAccessRole"
+            "arn:aws:iam::*:role/AWSReservedSSO_*",
+            "arn:aws:iam::*:role/OrganizationAccountAccessRole",
+            "arn:aws:iam::*:role/cleanup-*"
           ]
         }
       }
@@ -85,8 +86,9 @@
         },
         "ArnNotLike": {
           "aws:PrincipalArn": [
-            "arn:aws:iam::*:role/AWSReservedSSO_AdministratorAccess_*",
-            "arn:aws:iam::*:role/OrganizationAccountAccessRole"
+            "arn:aws:iam::*:role/AWSReservedSSO_*",
+            "arn:aws:iam::*:role/OrganizationAccountAccessRole",
+            "arn:aws:iam::*:role/cleanup-*"
           ]
         }
       }
@@ -141,8 +143,9 @@
         },
         "ArnNotLike": {
           "aws:PrincipalArn": [
-            "arn:aws:iam::*:role/AWSReservedSSO_AdministratorAccess_*",
-            "arn:aws:iam::*:role/OrganizationAccountAccessRole"
+            "arn:aws:iam::*:role/AWSReservedSSO_*",
+            "arn:aws:iam::*:role/OrganizationAccountAccessRole",
+            "arn:aws:iam::*:role/cleanup-*"
           ]
         }
       }
@@ -189,8 +192,9 @@
         },
         "ArnNotLike": {
           "aws:PrincipalArn": [
-            "arn:aws:iam::*:role/AWSReservedSSO_AdministratorAccess_*",
-            "arn:aws:iam::*:role/OrganizationAccountAccessRole"
+            "arn:aws:iam::*:role/AWSReservedSSO_*",
+            "arn:aws:iam::*:role/OrganizationAccountAccessRole",
+            "arn:aws:iam::*:role/cleanup-*"
           ]
         }
       }
