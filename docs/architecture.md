@@ -322,6 +322,8 @@ to control costs and maintain a clean environment.
 
 ### Cleanup Architecture
 
+![Cleanup Architecture Diagram](cleanup-architecture.png)
+
 ```mermaid
 graph TB
     subgraph "Orchestration"
