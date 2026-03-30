@@ -205,7 +205,11 @@ resource "aws_codebuild_project" "cleanup" {
                       dynamodb)
                         aws dynamodb delete-table --table-name "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
                       sqs)
-                        aws sqs delete-queue --queue-url "$ARN" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                        QUEUE_NAME=$(echo "$ARN" | rev | cut -d: -f1 | rev)
+                        QUEUE_URL=$(aws sqs get-queue-url --queue-name "$QUEUE_NAME" --query 'QueueUrl' --output text 2>/dev/null)
+                        if [ -n "$QUEUE_URL" ]; then
+                          aws sqs delete-queue --queue-url "$QUEUE_URL" 2>&1 | tee -a /tmp/nuke-output.log
+                        fi ;;
                       sns)
                         aws sns delete-topic --topic-arn "$ARN" 2>&1 | tee -a /tmp/nuke-output.log ;;
                       s3)
@@ -235,12 +239,72 @@ resource "aws_codebuild_project" "cleanup" {
                         aws cloudformation delete-stack --stack-name "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
                       cognito-idp)
                         aws cognito-idp delete-user-pool --user-pool-id "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                      iam)
+                        RTYPE=$(echo "$ARN" | cut -d: -f6 | cut -d/ -f1)
+                        IAM_NAME=$(echo "$ARN" | rev | cut -d/ -f1 | rev)
+                        case "$RTYPE" in
+                          role)
+                            # Detach managed policies
+                            for p in $(aws iam list-attached-role-policies --role-name "$IAM_NAME" --query 'AttachedPolicies[].PolicyArn' --output text 2>/dev/null); do
+                              aws iam detach-role-policy --role-name "$IAM_NAME" --policy-arn "$p" 2>/dev/null
+                            done
+                            # Delete inline policies
+                            for p in $(aws iam list-role-policies --role-name "$IAM_NAME" --query 'PolicyNames[]' --output text 2>/dev/null); do
+                              aws iam delete-role-policy --role-name "$IAM_NAME" --policy-name "$p" 2>/dev/null
+                            done
+                            # Remove from instance profiles
+                            for ip in $(aws iam list-instance-profiles-for-role --role-name "$IAM_NAME" --query 'InstanceProfiles[].InstanceProfileName' --output text 2>/dev/null); do
+                              aws iam remove-role-from-instance-profile --instance-profile-name "$ip" --role-name "$IAM_NAME" 2>/dev/null
+                              aws iam delete-instance-profile --instance-profile-name "$ip" 2>/dev/null
+                            done
+                            aws iam delete-role --role-name "$IAM_NAME" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                          user)
+                            # Delete access keys
+                            for k in $(aws iam list-access-keys --user-name "$IAM_NAME" --query 'AccessKeyMetadata[].AccessKeyId' --output text 2>/dev/null); do
+                              aws iam delete-access-key --user-name "$IAM_NAME" --access-key-id "$k" 2>/dev/null
+                            done
+                            # Detach policies
+                            for p in $(aws iam list-attached-user-policies --user-name "$IAM_NAME" --query 'AttachedPolicies[].PolicyArn' --output text 2>/dev/null); do
+                              aws iam detach-user-policy --user-name "$IAM_NAME" --policy-arn "$p" 2>/dev/null
+                            done
+                            # Delete inline policies
+                            for p in $(aws iam list-user-policies --user-name "$IAM_NAME" --query 'PolicyNames[]' --output text 2>/dev/null); do
+                              aws iam delete-user-policy --user-name "$IAM_NAME" --policy-name "$p" 2>/dev/null
+                            done
+                            # Remove from groups
+                            for g in $(aws iam list-groups-for-user --user-name "$IAM_NAME" --query 'Groups[].GroupName' --output text 2>/dev/null); do
+                              aws iam remove-user-from-group --user-name "$IAM_NAME" --group-name "$g" 2>/dev/null
+                            done
+                            aws iam delete-user --user-name "$IAM_NAME" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                          policy)
+                            # Delete non-default versions
+                            for v in $(aws iam list-policy-versions --policy-arn "$ARN" --query 'Versions[?!IsDefaultVersion].VersionId' --output text 2>/dev/null); do
+                              aws iam delete-policy-version --policy-arn "$ARN" --version-id "$v" 2>/dev/null
+                            done
+                            # Detach from all entities
+                            for r in $(aws iam list-entities-for-policy --policy-arn "$ARN" --query 'PolicyRoles[].RoleName' --output text 2>/dev/null); do
+                              aws iam detach-role-policy --role-name "$r" --policy-arn "$ARN" 2>/dev/null
+                            done
+                            for u in $(aws iam list-entities-for-policy --policy-arn "$ARN" --query 'PolicyUsers[].UserName' --output text 2>/dev/null); do
+                              aws iam detach-user-policy --user-name "$u" --policy-arn "$ARN" 2>/dev/null
+                            done
+                            aws iam delete-policy --policy-arn "$ARN" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                          *) echo "    [SKIP] unknown iam type: $RTYPE" | tee -a /tmp/nuke-output.log ;;
+                        esac ;;
                       *)
                         echo "    [SKIP] unsupported service: $TYPE ($ARN)" | tee -a /tmp/nuke-output.log ;;
                     esac
                   fi
                 done
               done
+
+              # Wait for EC2 terminations to complete before final count
+              TERMINATED=$(grep -o 'terminate-instances.*i-[a-z0-9]*' /tmp/nuke-output.log | grep -o 'i-[a-z0-9]*' | sort -u | tr '\n' ' ')
+              if [ -n "$TERMINATED" ]; then
+                echo "Waiting for EC2 terminations: $TERMINATED" | tee -a /tmp/nuke-output.log
+                aws ec2 wait instance-terminated --instance-ids $TERMINATED 2>/dev/null || true
+                echo "EC2 terminations complete" | tee -a /tmp/nuke-output.log
+              fi
 
               echo ""
               echo "=== Cleanup complete ==="
