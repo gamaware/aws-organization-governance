@@ -326,6 +326,12 @@ resource "aws_iam_role_policy" "step_functions_orchestration" {
         Effect   = "Allow"
         Action   = "events:*"
         Resource = "*"
+      },
+      {
+        Sid      = "AllowPassRole"
+        Effect   = "Allow"
+        Action   = "iam:PassRole"
+        Resource = "arn:aws:iam::${var.account_id}:role/cleanup-stepfunctions-execution"
       }
     ]
   })

@@ -201,7 +201,7 @@ resource "aws_codebuild_project" "cleanup" {
 # at creation time, and newly created roles need time to propagate.
 resource "time_sleep" "wait_for_iam" {
   depends_on      = [aws_iam_role_policy.step_functions_orchestration]
-  create_duration = "30s"
+  create_duration = "60s"
 }
 
 # Step Functions state machine
