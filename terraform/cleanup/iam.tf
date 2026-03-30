@@ -322,16 +322,10 @@ resource "aws_iam_role_policy" "step_functions_orchestration" {
         Resource = "*"
       },
       {
-        Sid    = "AllowCodeBuildEvents"
-        Effect = "Allow"
-        Action = [
-          "events:PutTargets",
-          "events:PutRule",
-          "events:DescribeRule",
-          "events:DeleteRule",
-          "events:RemoveTargets"
-        ]
-        Resource = "arn:aws:events:${var.aws_region}:${var.account_id}:rule/*"
+        Sid      = "AllowEvents"
+        Effect   = "Allow"
+        Action   = "events:*"
+        Resource = "*"
       }
     ]
   })
