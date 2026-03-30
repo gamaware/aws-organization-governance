@@ -150,9 +150,38 @@ resource "aws_iam_role_policy" "codebuild_cleanup" {
         Resource = "*"
       },
       {
-        Sid      = "DenyIdentityAndAudit"
+        Sid    = "AllowIAMReadOnly"
+        Effect = "Allow"
+        Action = [
+          "iam:ListAccountAliases",
+          "iam:GetRole",
+          "iam:ListRoles",
+          "iam:ListPolicies",
+          "iam:ListUsers",
+          "iam:ListGroups"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "DenyIAMWrite"
+        Effect = "Deny"
+        Action = [
+          "iam:Create*",
+          "iam:Delete*",
+          "iam:Put*",
+          "iam:Attach*",
+          "iam:Detach*",
+          "iam:Update*",
+          "iam:Add*",
+          "iam:Remove*",
+          "iam:PassRole"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid      = "DenyOrgAndAudit"
         Effect   = "Deny"
-        Action   = ["iam:*", "organizations:*", "sso:*", "sso-admin:*", "cloudtrail:*"]
+        Action   = ["organizations:*", "sso:*", "sso-admin:*", "cloudtrail:*"]
         Resource = "*"
       }
     ]
