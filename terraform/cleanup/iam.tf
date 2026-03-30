@@ -220,6 +220,7 @@ resource "aws_iam_role_policy" "lambda_verify" {
           "s3:ListAllMyBuckets",
           "s3:GetBucketTagging",
           "lambda:List*",
+          "lambda:GetFunction",
           "dynamodb:List*",
           "dynamodb:DescribeTable",
           "ecs:List*",
@@ -242,7 +243,16 @@ resource "aws_iam_role_policy" "lambda_verify" {
           "cloudfront:List*",
           "secretsmanager:List*",
           "states:List*",
-          "tag:GetResources"
+          "tag:GetResources",
+          "iam:ListRoles",
+          "iam:ListUsers",
+          "iam:ListPolicies",
+          "iam:ListRoleTags",
+          "iam:ListUserTags",
+          "iam:ListPolicyTags",
+          "iam:GetRole",
+          "iam:GetUser",
+          "iam:GetPolicy"
         ]
         Resource = "*"
       },
