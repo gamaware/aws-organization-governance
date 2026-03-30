@@ -316,6 +316,15 @@ resource "aws_iam_role_policy" "step_functions_orchestration" {
         Resource = "*"
       },
       {
+        Sid    = "AllowKMS"
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey"
+        ]
+        Resource = "*"
+      },
+      {
         Sid      = "AllowActivity"
         Effect   = "Allow"
         Action   = ["states:GetActivityTask"]
