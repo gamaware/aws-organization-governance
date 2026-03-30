@@ -2,52 +2,102 @@ regions:
   - us-east-1
   - global
 
-account-blocklist:
+blocklist:
   - "557690606827"
   - "567209320893"
   - "626635444569"
   - "571600856221"
   - "222634394903"
 
-# NOTE: aws-nuke deletes everything NOT matching a filter. The filters below
-# protect infrastructure resources. All other resources (including student
-# resources with team tags) are deleted. This means untagged non-infrastructure
-# resources are also deleted. The AI verification step catches false positives.
+resource-types:
+  excludes:
+    # Never touch identity resources (IAM write denied in IAM policy anyway)
+    - IAMGroup
+    - IAMGroupPolicy
+    - IAMGroupPolicyAttachment
+    - IAMInstanceProfile
+    - IAMInstanceProfileRole
+    - IAMLoginProfile
+    - IAMOpenIDConnectProvider
+    - IAMPolicy
+    - IAMRole
+    - IAMRolePermissionsBoundary
+    - IAMRolePolicy
+    - IAMRolePolicyAttachment
+    - IAMSAMLProvider
+    - IAMServerCertificate
+    - IAMServiceSpecificCredential
+    - IAMSigningCertificate
+    - IAMUser
+    - IAMUserAccessKey
+    - IAMUserGroupAttachment
+    - IAMUserMFADevice
+    - IAMUserPolicy
+    - IAMUserPolicyAttachment
+    - IAMUserSSHPublicKey
+    - IAMVirtualMFADevice
+    # Never touch org/SSO resources
+    - OpsWorksUserProfile
+    # Never touch audit and config resources
+    - CloudTrailTrail
+    - ConfigServiceConfigRule
+    - ConfigServiceConfigurationRecorder
+    - ConfigServiceDeliveryChannel
+    # Never touch the cleanup infrastructure itself
+    - SFNStateMachine
+    - SFNActivity
+    - CodeBuildProject
+    - SchedulerSchedule
+    - SchedulerScheduleGroup
+
+# aws-nuke scans all non-excluded resource types.
+# Filters below KEEP (protect) matching resources from deletion.
+# Everything not matching a filter or exclusion gets deleted.
 accounts:
   "${account_id}":
     filters:
-      IAMRole:
-        - type: contains
-          value: "AWSReservedSSO"
-        - type: contains
-          value: "AWSServiceRole"
-        - type: contains
-          value: "GitHubActions"
-        - type: contains
-          value: "OrganizationAccountAccessRole"
+      # Protect cleanup infrastructure
+      LambdaFunction:
         - type: contains
           value: "cleanup-"
-      IAMRolePolicy:
-        - type: glob
-          value: "*"
-      IAMRolePolicyAttachment:
-        - type: glob
-          value: "*"
-      IAMPolicy:
         - type: contains
-          value: "aws-service-role"
-      IAMInstanceProfile:
+          value: "quicksuite"
+      LambdaLayer:
+        - type: contains
+          value: "quicksuite"
+      S3Bucket:
+        - type: contains
+          value: "dev-cleanup-reports"
+        - type: contains
+          value: "terraform-state"
+        - type: contains
+          value: "cdk-"
+      S3Object:
         - type: glob
           value: "*"
-      IAMOpenIDConnectProvider:
+      SNSTopic:
+        - type: contains
+          value: "cleanup-notifications"
+      SNSSubscription:
         - type: glob
           value: "*"
-      IAMSAMLProvider:
+      KMSKey:
         - type: glob
           value: "*"
-      CloudTrailTrail:
+      KMSAlias:
         - type: glob
           value: "*"
+
+      # Protect CloudWatch resources for cleanup and AWS-managed
+      CloudWatchLogsLogGroup:
+        - type: contains
+          value: "/aws/codebuild/resource-cleanup"
+        - type: contains
+          value: "/aws/lambda/cleanup-"
+        - type: contains
+          value: "/aws/lambda/quicksuite"
+
+      # Protect default VPC resources
       EC2DefaultSecurityGroupRule:
         - type: glob
           value: "*"
@@ -61,39 +111,92 @@ accounts:
         - property: DefaultForAz
           value: "true"
       EC2InternetGateway:
-        - property: tag:ManagedBy
-          value: "Terraform"
-      SFNStateMachine:
+        - property: DefaultVPC
+          value: "true"
+      EC2InternetGatewayAttachment:
+        - property: DefaultVPC
+          value: "true"
+      EC2SecurityGroup:
+        - property: Name
+          value: "default"
+
+      # Protect CloudFormation stacks (AWS-managed)
+      CloudFormationStack:
         - type: contains
-          value: "resource-cleanup"
-      CodeBuildProject:
+          value: "quicksuite"
         - type: contains
-          value: "resource-cleanup"
-      LambdaFunction:
+          value: "CDKToolkit"
+
+      # Protect EventBridge rules (AWS-managed and Step Functions)
+      CloudWatchEventsRule:
         - type: contains
-          value: "cleanup-"
-      S3Bucket:
+          value: "StepFunctions"
         - type: contains
-          value: "dev-cleanup-reports"
+          value: "AutoScaling"
         - type: contains
-          value: "terraform-state"
-      SNSTopic:
+          value: "EKSCompute"
         - type: contains
-          value: "cleanup-notifications"
-      SchedulerSchedule:
+          value: "DO-NOT-DELETE"
         - type: contains
-          value: "resource-cleanup"
-      CloudWatchLogsLogGroup:
+          value: "quicksuite"
+      CloudWatchEventsTarget:
         - type: contains
-          value: "/aws/codebuild/resource-cleanup"
+          value: "StepFunctions"
         - type: contains
-          value: "/aws/lambda/cleanup-"
-      ConfigServiceConfigRule:
+          value: "AutoScaling"
+        - type: contains
+          value: "EKSCompute"
+        - type: contains
+          value: "DO-NOT-DELETE"
+        - type: contains
+          value: "quicksuite"
+
+      # Protect ECS default resources
+      ECSCapacityProvider:
         - type: glob
           value: "*"
-      ConfigServiceConfigurationRecorder:
+      ECSTaskDefinition:
+        - property: Status
+          value: "INACTIVE"
+
+      # Protect ElastiCache defaults
+      ElasticacheCacheParameterGroup:
+        - type: contains
+          value: "default."
+      ElasticacheSubnetGroup:
+        - type: contains
+          value: "default"
+      ElasticacheUser:
+        - property: UserName
+          value: "default"
+
+      # Protect RDS defaults
+      RDSDBParameterGroup:
+        - type: contains
+          value: "default."
+      RDSOptionGroup:
+        - type: contains
+          value: "default:"
+      RDSDBSubnetGroup:
+        - type: contains
+          value: "default-"
+
+      # Protect DocumentDB defaults
+      DocDBSubnetGroup:
+        - type: contains
+          value: "default-"
+
+      # Protect EC2 network ACLs (default)
+      EC2NetworkACL:
         - type: glob
           value: "*"
-      ConfigServiceDeliveryChannel:
+
+      # Protect Resource Explorer
+      ResourceExplorer2Index:
         - type: glob
           value: "*"
+
+      # Protect ECR repos used by CDK
+      ECRRepository:
+        - type: contains
+          value: "cdk-"
