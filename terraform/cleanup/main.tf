@@ -72,16 +72,6 @@ resource "aws_sns_topic_subscription" "cleanup_email" {
   endpoint  = var.notification_email
 }
 
-# aws-nuke config rendered from template
-resource "aws_s3_object" "nuke_config" {
-  bucket = aws_s3_bucket.cleanup_reports.id
-  key    = "config/nuke-config.yaml"
-  content = templatefile("${path.module}/nuke-config.yaml.tpl", {
-    account_id = var.account_id
-    team_tags  = var.team_tags
-  })
-}
-
 # Lambda function for AI verification
 data "archive_file" "ai_verify_lambda" {
   type        = "zip"
@@ -133,16 +123,6 @@ resource "aws_codebuild_project" "cleanup" {
     privileged_mode = false
 
     environment_variable {
-      name  = "NUKE_CONFIG_BUCKET"
-      value = aws_s3_bucket.cleanup_reports.id
-    }
-
-    environment_variable {
-      name  = "NUKE_CONFIG_KEY"
-      value = "config/nuke-config.yaml"
-    }
-
-    environment_variable {
       name  = "REPORTS_BUCKET"
       value = aws_s3_bucket.cleanup_reports.id
     }
@@ -153,8 +133,8 @@ resource "aws_codebuild_project" "cleanup" {
     }
 
     environment_variable {
-      name  = "NUKE_VERSION"
-      value = var.nuke_version
+      name  = "TEAM_TAGS"
+      value = jsonencode(var.team_tags)
     }
   }
 
@@ -164,31 +144,108 @@ resource "aws_codebuild_project" "cleanup" {
     type      = "NO_SOURCE"
     buildspec = <<-BUILDSPEC
       version: 0.2
+      env:
+        shell: bash
       phases:
-        install:
-          commands:
-            - echo "Installing aws-nuke $NUKE_VERSION..."
-            - curl -sSfL "https://github.com/ekristen/aws-nuke/releases/download/$NUKE_VERSION/aws-nuke-$NUKE_VERSION-linux-amd64.tar.gz" | tar xzf - -C /usr/local/bin
-            - chmod +x /usr/local/bin/aws-nuke
         pre_build:
           commands:
-            - echo "Downloading nuke config..."
-            - aws s3 cp "s3://$NUKE_CONFIG_BUCKET/$NUKE_CONFIG_KEY" /tmp/nuke-config.yaml
             - export TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
-            - |
-              if [ -z "$DRY_RUN" ]; then
-                export NO_DRY_RUN_FLAG="--no-dry-run"
-              fi
+            - echo "=== Tag-Based Resource Cleanup ==="
+            - echo "Account $ACCOUNT_ID | DRY_RUN=$DRY_RUN"
+            - echo "Team tags $TEAM_TAGS"
         build:
           commands:
-            - echo "Running aws-nuke $${NO_DRY_RUN_FLAG:-(dry-run mode)}..."
             - |
-              aws-nuke nuke \
-                --config /tmp/nuke-config.yaml \
-                --no-prompt \
-                --force \
-                $NO_DRY_RUN_FLAG \
-                2>&1 | tee /tmp/nuke-output.log
+              # Find all resources with Team tags
+              TEAMS=$(echo "$TEAM_TAGS" | tr -d '[]"' | tr ',' ' ')
+              echo "Scanning for tagged resources..."
+              > /tmp/nuke-output.log
+
+              for TEAM in $TEAMS; do
+                echo "--- Scanning Team=$TEAM ---" | tee -a /tmp/nuke-output.log
+                RESOURCES=$(aws resourcegroupstaggingapi get-resources \
+                  --tag-filters Key=Team,Values=$TEAM \
+                  --query 'ResourceTagMappingList[].ResourceARN' \
+                  --output text 2>/dev/null || echo "")
+
+                if [ -z "$RESOURCES" ]; then
+                  echo "  No resources found for $TEAM" | tee -a /tmp/nuke-output.log
+                  continue
+                fi
+
+                for ARN in $RESOURCES; do
+                  TYPE=$(echo "$ARN" | cut -d: -f3)
+                  RESOURCE_ID=$(echo "$ARN" | rev | cut -d/ -f1 | rev)
+
+                  if [ -n "$DRY_RUN" ]; then
+                    echo "  [DRY-RUN] would remove: $ARN" | tee -a /tmp/nuke-output.log
+                  else
+                    echo "  [DELETE] removing: $ARN" | tee -a /tmp/nuke-output.log
+                    case "$TYPE" in
+                      ec2)
+                        RTYPE=$(echo "$ARN" | cut -d: -f6 | cut -d/ -f1)
+                        case "$RTYPE" in
+                          instance) aws ec2 terminate-instances --instance-ids "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                          volume) aws ec2 delete-volume --volume-id "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                          security-group) aws ec2 delete-security-group --group-id "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                          vpc) aws ec2 delete-vpc --vpc-id "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                          subnet) aws ec2 delete-subnet --subnet-id "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                          internet-gateway) aws ec2 delete-internet-gateway --internet-gateway-id "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                          natgateway) aws ec2 delete-nat-gateway --nat-gateway-id "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                          route-table) aws ec2 delete-route-table --route-table-id "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                          elastic-ip) aws ec2 release-address --allocation-id "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                          snapshot) aws ec2 delete-snapshot --snapshot-id "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                          key-pair) aws ec2 delete-key-pair --key-pair-id "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                          *) echo "    [SKIP] unknown ec2 type: $RTYPE" | tee -a /tmp/nuke-output.log ;;
+                        esac ;;
+                      rds)
+                        aws rds delete-db-instance --db-instance-identifier "$RESOURCE_ID" --skip-final-snapshot 2>&1 | tee -a /tmp/nuke-output.log ;;
+                      lambda)
+                        aws lambda delete-function --function-name "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                      dynamodb)
+                        aws dynamodb delete-table --table-name "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                      sqs)
+                        aws sqs delete-queue --queue-url "$ARN" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                      sns)
+                        aws sns delete-topic --topic-arn "$ARN" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                      s3)
+                        BUCKET=$(echo "$ARN" | cut -d: -f6)
+                        aws s3 rb "s3://$BUCKET" --force 2>&1 | tee -a /tmp/nuke-output.log ;;
+                      elasticloadbalancing)
+                        aws elbv2 delete-load-balancer --load-balancer-arn "$ARN" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                      ecs)
+                        RTYPE=$(echo "$ARN" | cut -d: -f6 | cut -d/ -f1)
+                        case "$RTYPE" in
+                          cluster) aws ecs delete-cluster --cluster "$ARN" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                          service) aws ecs delete-service --cluster "$(echo "$ARN" | cut -d/ -f2)" --service "$RESOURCE_ID" --force 2>&1 | tee -a /tmp/nuke-output.log ;;
+                        esac ;;
+                      ecr)
+                        aws ecr delete-repository --repository-name "$RESOURCE_ID" --force 2>&1 | tee -a /tmp/nuke-output.log ;;
+                      secretsmanager)
+                        aws secretsmanager delete-secret --secret-id "$ARN" --force-delete-without-recovery 2>&1 | tee -a /tmp/nuke-output.log ;;
+                      states)
+                        aws stepfunctions delete-state-machine --state-machine-arn "$ARN" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                      events)
+                        aws events delete-rule --name "$RESOURCE_ID" --force 2>&1 | tee -a /tmp/nuke-output.log ;;
+                      logs)
+                        aws logs delete-log-group --log-group-name "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                      elasticache)
+                        aws elasticache delete-cache-cluster --cache-cluster-id "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                      cloudformation)
+                        aws cloudformation delete-stack --stack-name "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                      cognito-idp)
+                        aws cognito-idp delete-user-pool --user-pool-id "$RESOURCE_ID" 2>&1 | tee -a /tmp/nuke-output.log ;;
+                      *)
+                        echo "    [SKIP] unsupported service: $TYPE ($ARN)" | tee -a /tmp/nuke-output.log ;;
+                    esac
+                  fi
+                done
+              done
+
+              echo ""
+              echo "=== Cleanup complete ==="
+              TOTAL=$(grep -c "would remove\|removing:" /tmp/nuke-output.log || echo 0)
+              echo "Total resources: $TOTAL" | tee -a /tmp/nuke-output.log
         post_build:
           on-failure: CONTINUE
           commands:

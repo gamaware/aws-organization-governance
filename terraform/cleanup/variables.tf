@@ -35,9 +35,3 @@ variable "cleanup_schedule" {
   type        = string
   default     = "at(2026-05-22T12:00:00)"
 }
-
-variable "nuke_version" {
-  description = "aws-nuke Docker image tag"
-  type        = string
-  default     = "v3.64.0"
-}
