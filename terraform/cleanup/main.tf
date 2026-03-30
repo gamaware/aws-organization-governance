@@ -196,10 +196,20 @@ resource "aws_codebuild_project" "cleanup" {
   }
 }
 
+# Wait for IAM role propagation before creating the state machine.
+# Step Functions validates the execution role's EventBridge permissions
+# at creation time, and newly created roles need time to propagate.
+resource "time_sleep" "wait_for_iam" {
+  depends_on      = [aws_iam_role_policy.step_functions_orchestration]
+  create_duration = "30s"
+}
+
 # Step Functions state machine
 resource "aws_sfn_state_machine" "cleanup" {
   name     = "resource-cleanup"
   role_arn = aws_iam_role.step_functions_execution.arn
+
+  depends_on = [time_sleep.wait_for_iam]
 
   definition = jsonencode({
     Comment = "Orchestrates Dev account resource cleanup"
