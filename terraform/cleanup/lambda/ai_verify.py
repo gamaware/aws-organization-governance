@@ -241,20 +241,29 @@ The following resource types failed to scan. Treat them as UNKNOWN (not clean):
 {json.dumps(scan_errors, indent=2)}
 """
 
-    prompt = f"""You are auditing an AWS account after a resource cleanup operation.
+    prompt = f"""You are auditing an AWS Dev account used by students.
+
+## CRITICAL RULES
+- ONLY resources with Team tags ({', '.join(TEAM_TAGS)}) are student resources
+- Resources WITHOUT Team tags are pre-existing infrastructure and MUST be kept
+- Old VPCs, EC2 key pairs, snapshots, IAM roles, CloudFormation stacks WITHOUT
+  Team tags are legitimate and should NOT be flagged for deletion
+- The cleanup targets ONLY tagged resources. Everything else stays.
 
 ## Context
 - Account ID: {ACCOUNT_ID}
-- Team tags targeted for deletion: {', '.join(TEAM_TAGS)}
-- Infrastructure resources (cleanup infra, Terraform state, CloudTrail) should NOT be deleted
+- Team tags targeted: {', '.join(TEAM_TAGS)}
+- Infrastructure to always keep: cleanup Lambda/CodeBuild/S3/SNS/KMS,
+  Terraform state bucket, CloudTrail, AWS-managed IAM roles, default VPC
 
 ## Scan 1: Tagged Resources Still Present
-These resources still have team tags after cleanup. If any exist, cleanup FAILED.
+Resources with Team tags found in the account. After cleanup, this should be empty.
+If any exist, cleanup is NOT CLEAN.
 
 {json.dumps(tagged_resources, indent=2)}
 
 ## Scan 2: Full Account Inventory
-All resources currently in the account (infrastructure excluded where possible):
+All resources in the account (infrastructure partially excluded):
 
 {json.dumps(inventory, indent=2)}
 {scan_error_note}
@@ -263,16 +272,19 @@ All resources currently in the account (infrastructure excluded where possible):
 {accepted_findings}
 
 ## Your Task
-1. Check Scan 1: are there ANY remaining tagged resources? If yes, cleanup failed.
-2. Check Scan 2: are there resources that look student-created but lack tags?
-3. Cross-reference both scans.
+1. Check Scan 1: are there ANY remaining tagged resources? If yes, NOT CLEAN.
+2. Check Scan 2: are there tagged resources the Tagging API missed (e.g.,
+   IAM roles/users with Team tags)? Check the inventory for resources with
+   names like "test-student-*" that might be student-created.
+3. Do NOT flag untagged resources as problems. They are pre-existing and
+   should be kept.
 
 Respond with:
 - **Verdict**: CLEAN or NOT CLEAN
-- **Remaining resources**: list each with its ARN/ID and why it should be deleted
-- **Remediation**: exact `aws` CLI commands to delete each remaining resource
-- Skip any resources that are infrastructure (cleanup Lambda, CodeBuild, S3 state
-  bucket, CloudTrail, IAM roles, etc.)
+- **Tagged resources remaining**: list each with ARN and Team tag value
+- **Suspected student resources**: any resources without Team tags but with
+  names suggesting student origin (only flag, do not mandate deletion)
+- **Remediation**: exact `aws` CLI commands for remaining tagged resources
 """
 
     response = bedrock.invoke_model(
