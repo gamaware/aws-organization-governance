@@ -11,7 +11,9 @@ blocklist:
 
 resource-types:
   excludes:
-    # Never touch identity resources (IAM write denied in IAM policy anyway)
+    # Exclude all IAM — too many AWS-managed roles with unique names that
+    # cannot be pattern-filtered safely. The AI verification scan catches
+    # any student-created IAM resources as a second pass.
     - IAMGroup
     - IAMGroupPolicy
     - IAMGroupPolicyAttachment

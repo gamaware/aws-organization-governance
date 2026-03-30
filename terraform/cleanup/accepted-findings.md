@@ -21,6 +21,7 @@ The AI verification prompt includes this file so it skips known findings.
 | CloudTrail trails remain after cleanup | Protected by SCP, intentionally preserved |
 | Cleanup infrastructure remains (Lambda, CodeBuild, S3, SNS, Step Functions) | Self-referential, filtered in aws-nuke config |
 | Terraform state bucket remains | Infrastructure, not student-created |
+| IAM resources excluded from aws-nuke | Too many AWS-managed roles with unique names, AI verification catches student IAM as second pass |
 | CloudWatch log groups for cleanup infra remain | Filtered in inventory scan |
 
 ## Won't Fix
