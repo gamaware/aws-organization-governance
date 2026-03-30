@@ -217,6 +217,48 @@ def get_full_inventory():
         logger.error("Failed to scan sm_entries: %s", e)
         inventory["sm_entries"] = {"error": str(e)}
 
+    # IAM scan — find roles, users, and policies with team tags
+    iam = boto3.client("iam")
+
+    try:
+        r = iam.list_roles(MaxItems=200)
+        iam_roles = []
+        for role in r["Roles"]:
+            tags = iam.list_role_tags(RoleName=role["RoleName"]).get("Tags", [])
+            tag_dict = {t["Key"]: t["Value"] for t in tags}
+            if "Team" in tag_dict:
+                iam_roles.append({"name": role["RoleName"], "tags": tag_dict})
+        inventory["iam_roles_with_team_tags"] = iam_roles
+    except Exception as e:
+        logger.error("Failed to scan IAM roles: %s", e)
+        inventory["iam_roles_with_team_tags"] = {"error": str(e)}
+
+    try:
+        r = iam.list_users(MaxItems=200)
+        iam_users = []
+        for user in r["Users"]:
+            tags = iam.list_user_tags(UserName=user["UserName"]).get("Tags", [])
+            tag_dict = {t["Key"]: t["Value"] for t in tags}
+            if "Team" in tag_dict:
+                iam_users.append({"name": user["UserName"], "tags": tag_dict})
+        inventory["iam_users_with_team_tags"] = iam_users
+    except Exception as e:
+        logger.error("Failed to scan IAM users: %s", e)
+        inventory["iam_users_with_team_tags"] = {"error": str(e)}
+
+    try:
+        r = iam.list_policies(Scope="Local", MaxItems=200)
+        iam_policies = []
+        for policy in r["Policies"]:
+            tags = iam.list_policy_tags(PolicyArn=policy["Arn"]).get("Tags", [])
+            tag_dict = {t["Key"]: t["Value"] for t in tags}
+            if "Team" in tag_dict:
+                iam_policies.append({"name": policy["PolicyName"], "arn": policy["Arn"], "tags": tag_dict})
+        inventory["iam_policies_with_team_tags"] = iam_policies
+    except Exception as e:
+        logger.error("Failed to scan IAM policies: %s", e)
+        inventory["iam_policies_with_team_tags"] = {"error": str(e)}
+
     return inventory
 
 
