@@ -175,16 +175,19 @@ resource "aws_codebuild_project" "cleanup" {
             - echo "Downloading nuke config..."
             - aws s3 cp "s3://$NUKE_CONFIG_BUCKET/$NUKE_CONFIG_KEY" /tmp/nuke-config.yaml
             - export TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
-            - export DRY_RUN_FLAG=$${DRY_RUN:+"--dry-run"}
+            - |
+              if [ -z "$DRY_RUN" ]; then
+                export NO_DRY_RUN_FLAG="--no-dry-run"
+              fi
         build:
           commands:
-            - echo "Running aws-nuke $${DRY_RUN:+(dry-run)}..."
+            - echo "Running aws-nuke $${NO_DRY_RUN_FLAG:-(dry-run mode)}..."
             - |
-              aws-nuke run \
+              aws-nuke nuke \
                 --config /tmp/nuke-config.yaml \
                 --no-prompt \
                 --force \
-                $DRY_RUN_FLAG \
+                $NO_DRY_RUN_FLAG \
                 2>&1 | tee /tmp/nuke-output.log
         post_build:
           on-failure: CONTINUE
