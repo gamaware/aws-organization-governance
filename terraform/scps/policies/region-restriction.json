@@ -60,7 +60,10 @@
           ]
         },
         "ArnNotLike": {
-          "aws:PrincipalArn": "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_AdministratorAccess_*"
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_*",
+            "arn:aws:iam::*:role/cleanup-*"
+          ]
         }
       }
     }
