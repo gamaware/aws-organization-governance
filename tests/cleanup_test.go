@@ -187,7 +187,8 @@ func TestCleanupKMS(t *testing.T) {
 		page, err := paginator.NextPage(context.TODO())
 		require.NoError(t, err, "ListAliases failed")
 		for _, alias := range page.Aliases {
-			if *alias.AliasName == "alias/cleanup" {
+			if alias.AliasName != nil && *alias.AliasName == "alias/cleanup" {
+				require.NotNil(t, alias.TargetKeyId, "alias/cleanup should have a TargetKeyId")
 				keyID = *alias.TargetKeyId
 				break
 			}
