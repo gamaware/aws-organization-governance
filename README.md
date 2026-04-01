@@ -98,7 +98,11 @@ aws sts get-caller-identity
 │   ├── variables.tf                       # Input variables
 │   ├── terraform.tfvars.example           # Variable template
 │   ├── main.tf                            # Data source + SCPs
-│   └── outputs.tf                         # Output values
+│   ├── outputs.tf                         # Output values
+│   └── tests/                             # Native terraform test files (mocked)
+├── terraform/cleanup/
+│   └── tests/                             # Native terraform test files (mocked)
+├── tests/                                  # Terratest Go integration tests
 ├── docs/
 │   ├── adr/                               # Architecture Decision Records
 │   ├── architecture.md                    # Architecture & design decisions
@@ -183,7 +187,7 @@ graph LR
 | Workflow | Trigger | Purpose |
 | --- | --- | --- |
 | `terraform-cicd.yml` | Push to main, manual | Plan → environment approval → apply (artifact reuse), manual destroy |
-| `terraform-pr.yml` | PR | Lint (fmt, tflint), security (checkov), plan |
+| `terraform-pr.yml` | PR | Lint (fmt, tflint), security (checkov), terraform test (mocked), plan |
 | `quality-checks.yml` | PR, push to main | Markdownlint, shellcheck, yamllint, zizmor, structure validation (step summaries) |
 | `security.yml` | PR, push to main | Semgrep SAST, Trivy IaC scanning (step summaries) |
 | `drift-detection.yml` | Daily 9 AM UTC | Detects config drift, creates GitHub issue |

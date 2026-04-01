@@ -14,3 +14,6 @@ ADRs are dateless since the governance structure persists across time.
 | [ADR-003](003-cicd-pipeline.md) | CI/CD Pipeline and Deployment Strategy | Accepted |
 | [ADR-004](004-iam-least-privilege.md) | IAM Least Privilege for GitHub Actions | Accepted |
 | [ADR-005](005-defense-in-depth.md) | Defense in Depth and Security Controls | Accepted |
+| [ADR-006](006-ai-post-deploy-validation.md) | AI-Powered Post-Deployment Validation | Accepted |
+| [ADR-007](007-resource-cleanup.md) | Automated Resource Cleanup | Accepted |
+| [ADR-008](008-terraform-testing.md) | Terraform Testing Strategy | Accepted |
