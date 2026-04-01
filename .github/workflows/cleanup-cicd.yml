@@ -72,6 +72,7 @@ jobs:
           path: |
             terraform/cleanup/tfplan
             terraform/cleanup/lambda.zip
+            terraform/cleanup/.terraform.lock.hcl
           retention-days: 7
 
   terraform-apply:
