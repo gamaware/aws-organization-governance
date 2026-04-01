@@ -34,6 +34,9 @@ terraform/cleanup/
   iam.tf                      # IAM roles and policies for cleanup
   lambda/                     # Lambda function source code
   nuke-config.yaml.tpl        # aws-nuke configuration template
+terraform/scps/tests/             # Native terraform test files (mocked)
+terraform/cleanup/tests/          # Native terraform test files (mocked)
+tests/                            # Terratest Go integration tests
 docs/
   adr/                        # Architecture Decision Records
   architecture.md             # Architecture and design decisions
@@ -200,6 +203,58 @@ Each job posts a `$GITHUB_STEP_SUMMARY` with config details and status.
 ### Dependabot
 
 Monitors GitHub Actions and Terraform provider dependencies weekly.
+
+## Testing
+
+### terraform test (native, mocked)
+
+Unit-level configuration tests using Terraform's built-in test framework with mocked
+providers. No AWS credentials required.
+
+**Location:** `terraform/<module>/tests/*.tftest.hcl`
+
+**Run locally:**
+
+```bash
+cd terraform/scps
+printf 'terraform {\n  backend "local" {}\n}\n' > backend_override.tf
+terraform init -reconfigure
+terraform test -verbose
+rm backend_override.tf
+```
+
+**CI:** Runs as `terraform-test` job in `terraform-pr.yml` (parallel with lint-and-security).
+
+**What it tests:**
+
+- Variable validation (valid/invalid inputs)
+- Resource configuration (names, types, properties)
+- SCP policy content (expected Statement IDs)
+- IAM role trust policies and inline policy structure
+- Output values
+
+### Terratest (Go integration tests)
+
+Read-only post-deploy verification using AWS SDK v2. Tests do not create or destroy
+infrastructure -- they validate already-deployed resources via API calls.
+
+**Location:** `tests/` at repo root
+
+**Run locally:**
+
+```bash
+cd tests
+export CLEANUP_ACCOUNT_ID=<dev-account-id>
+go test -v -timeout 10m ./...
+```
+
+**CI:** Runs after terraform apply in `terraform-cicd.yml` and `cleanup-cicd.yml`.
+
+**What it tests:**
+
+- SCPs: policy existence, attachment to correct OUs, output format
+- Cleanup: Lambda config, Step Functions structure, S3 bucket settings, KMS, IAM roles,
+  CodeBuild project, EventBridge scheduler
 
 ## Code Review
 

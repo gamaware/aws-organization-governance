@@ -34,11 +34,46 @@ jobs:
         with:
           working_directory: terraform/scps
 
+  terraform-test:
+    name: Terraform Test (${{ matrix.module }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [scps, cleanup]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.14.5"
+          terraform_wrapper: false
+
+      - name: Override Backend
+        working-directory: terraform/${{ matrix.module }}
+        shell: bash
+        run: printf 'terraform {\n  backend "local" {}\n}\n' > backend_override.tf
+
+      - name: Terraform Init
+        working-directory: terraform/${{ matrix.module }}
+        run: terraform init
+
+      - name: Run Terraform Tests
+        working-directory: terraform/${{ matrix.module }}
+        run: terraform test -verbose
+
   terraform-plan:
     name: Terraform Plan
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: lint-and-security
+    needs: [lint-and-security, terraform-test]
     permissions:
       id-token: write
       contents: read
