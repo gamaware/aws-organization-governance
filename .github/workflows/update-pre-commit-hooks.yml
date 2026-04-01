@@ -1,4 +1,11 @@
+# -----------------------------------------------------------------
+# Update Pre-commit Hooks — weekly auto-update of hook versions
+#
+# Runs on: weekly Sunday at 00:00 UTC, manual dispatch
+# Jobs: updates .pre-commit-config.yaml and creates PR
+# -----------------------------------------------------------------
 name: Update Pre-commit Hooks
+run-name: "Update Pre-commit Hooks (${{ github.event_name }})"
 
 on:
   schedule:

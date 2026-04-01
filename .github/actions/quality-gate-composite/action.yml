@@ -1,5 +1,5 @@
 name: 'Quality and Security Gate Composite Action'
-description: 'Waits for Quality Checks and Security Scanning to pass before allowing Terraform operations'
+description: 'Waits for CI Checks to pass before allowing Terraform operations'
 
 inputs:
   github_token:

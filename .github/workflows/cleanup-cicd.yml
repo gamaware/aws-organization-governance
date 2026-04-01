@@ -1,3 +1,10 @@
+# -----------------------------------------------------------------
+# Cleanup CI/CD — deploys cleanup automation to Dev account
+#
+# Runs on: push to main (terraform/cleanup/**), manual dispatch
+# Jobs: plan → apply (production gate) → Terratest integration tests
+# Concurrency: cleanup-terraform-state (independent from SCPs)
+# -----------------------------------------------------------------
 name: Cleanup CI/CD
 run-name: >-
   ${{ github.event_name == 'workflow_dispatch'
@@ -127,4 +134,14 @@ jobs:
           AWS_REGION: ${{ vars.TF_VAR_aws_region }}
           CLEANUP_ACCOUNT_ID: ${{ vars.CLEANUP_ACCOUNT_ID }}
           TF_WORKING_DIR: ${{ github.workspace }}/terraform/cleanup
-        run: go test -v -timeout 10m -run TestCleanup ./...
+        shell: bash
+        run: |
+          go test -v -timeout 10m -run TestCleanup ./... 2>&1 | tee test-output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          {
+            echo "### Integration Tests: Cleanup"
+            echo '```'
+            grep -E '(PASS|FAIL|ok |--- )' test-output.txt || tail -20 test-output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$EXIT_CODE"

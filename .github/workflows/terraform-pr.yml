@@ -1,3 +1,11 @@
+# -----------------------------------------------------------------
+# Terraform PR Checks — validates Terraform changes before merge
+#
+# Runs on: PRs to main that touch terraform/ or workflow files
+# Jobs: lint + security (TFLint, Checkov), terraform test (mocked),
+#       terraform plan (posted as PR comment)
+# Gate: blocks merge if any job fails
+# -----------------------------------------------------------------
 name: Terraform PR Checks
 run-name: >-
   Terraform PR checks (PR #${{ github.event.pull_request.number }})
@@ -67,7 +75,17 @@ jobs:
 
       - name: Run Terraform Tests
         working-directory: terraform/${{ matrix.module }}
-        run: terraform test -verbose
+        shell: bash
+        run: |
+          terraform test -verbose 2>&1 | tee test-output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          {
+            echo "### Terraform Test: ${{ matrix.module }}"
+            echo '```'
+            tail -20 test-output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$EXIT_CODE"
 
   terraform-plan:
     name: Terraform Plan

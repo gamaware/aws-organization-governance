@@ -172,18 +172,15 @@ The quality gate ties them together without coupling:
 
 ```text
 PR opened (terraform/**)
-├── quality-checks.yml    → repo-wide: markdown, shell, YAML, structure
-├── security.yml          → Semgrep SAST, Trivy IaC scanning
+├── ci-checks.yml         → repo-wide: markdown, shell, YAML, structure, Semgrep, Trivy
 └── terraform-pr.yml      → TF-specific: TFLint, Checkov, terraform test, plan
 
 Push to main (terraform/scps/**)
-├── quality-checks.yml    → same repo-wide checks
-├── security.yml          → same security scans
-└── terraform-cicd.yml    → quality gate polls for ↑ both, then plan → apply → Terratest
+├── ci-checks.yml         → same repo-wide checks
+└── terraform-cicd.yml    → quality gate polls ci-checks, then plan → apply → Terratest
 
 Push to main (terraform/cleanup/**)
-├── quality-checks.yml    → same repo-wide checks
-├── security.yml          → same security scans
+├── ci-checks.yml         → same repo-wide checks
 └── cleanup-cicd.yml      → plan → apply (cross-account) → Terratest
 ```
 
@@ -218,18 +215,13 @@ strategy runs both SCPs and cleanup modules), and `terraform plan` with PR comme
 The plan job depends on both lint and test jobs passing first. No AWS credentials
 needed for the test job (mocked providers only).
 
-### quality-checks.yml
+### ci-checks.yml
 
-Repo-wide quality — runs on every PR and push to main. Jobs: markdownlint, link
-checking, shellcheck, yamllint, zizmor (actions security), file structure validation,
-README quality check, Vale (prose linting). Each job posts a `$GITHUB_STEP_SUMMARY`.
-This workflow validates the repository as a whole, not Terraform specifically.
-
-### security.yml
-
-Security scanning — runs on every PR and push to main. Semgrep SAST and Trivy IaC
-scanning. Each job posts a `$GITHUB_STEP_SUMMARY`. The terraform-cicd quality gate
-polls for this workflow and `quality-checks.yml` to pass before allowing apply.
+Repo-wide quality and security — runs on every PR and push to main (no path filtering).
+10 parallel jobs: markdownlint, link checking, shellcheck, yamllint, zizmor (actions
+security), file structure validation, README quality check, Vale (prose linting),
+Semgrep SAST, and Trivy IaC scanning. Each job posts a `$GITHUB_STEP_SUMMARY`.
+The terraform-cicd quality gate polls this single workflow before allowing apply.
 
 ### drift-detection.yml
 
