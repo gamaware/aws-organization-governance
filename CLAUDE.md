@@ -164,11 +164,35 @@ Hooks in `.claude/settings.json` automate deterministic actions:
 
 ## CI/CD Pipelines
 
+### How workflows relate
+
+Workflows are separate because GitHub Actions uses workflows as the unit of
+triggering — each needs its own trigger, permissions, and concurrency group.
+The quality gate ties them together without coupling:
+
+```text
+PR opened (terraform/**)
+├── quality-checks.yml    → repo-wide: markdown, shell, YAML, structure
+├── security.yml          → Semgrep SAST, Trivy IaC scanning
+└── terraform-pr.yml      → TF-specific: TFLint, Checkov, terraform test, plan
+
+Push to main (terraform/scps/**)
+├── quality-checks.yml    → same repo-wide checks
+├── security.yml          → same security scans
+└── terraform-cicd.yml    → quality gate polls for ↑ both, then plan → apply → Terratest
+
+Push to main (terraform/cleanup/**)
+├── quality-checks.yml    → same repo-wide checks
+├── security.yml          → same security scans
+└── cleanup-cicd.yml      → plan → apply (cross-account) → Terratest
+```
+
 ### terraform-cicd.yml
 
-Main pipeline — push to main triggers plan → apply pauses at `production`
+Main SCP pipeline — push to main triggers plan → apply pauses at `production`
 environment gate → reviewer approves → apply uses saved plan artifact (no re-plan).
-After apply, deterministic validation runs followed by AI analysis via Bedrock.
+After apply: deterministic validation (`validate-deployment.sh`), AI analysis via
+Bedrock, then Terratest integration tests (`go test -run TestSCPs`).
 AI analysis output is uploaded as artifact `ai-deployment-analysis` (30-day retention).
 To review findings: `gh run download <RUN_ID> -n ai-deployment-analysis` then read
 `ai-analysis.md`. The AI prompt includes `terraform/scps/accepted-findings.md` so it
@@ -177,9 +201,35 @@ findings, triage them into the accepted findings file (fixed, accepted-risk, won
 or to-fix). Destroy is manual only via `workflow_dispatch` with `plan -destroy` preview.
 Concurrency group (`terraform-state`) prevents simultaneous Terraform runs.
 
+### cleanup-cicd.yml
+
+Cleanup module pipeline — push to main triggers plan → apply pauses at `production`
+environment gate → reviewer approves → apply uses saved plan artifact (includes
+`.terraform.lock.hcl` for consistency). After apply, Terratest integration tests
+(`go test -run TestCleanup`) verify deployed resources via cross-account AWS SDK
+calls. Concurrency group (`cleanup-terraform-state`) is separate from the SCP
+pipeline to allow independent deployments.
+
 ### terraform-pr.yml
 
-PR checks — TFLint, Checkov security scan, plan preview, plan output as PR comment.
+PR checks for Terraform changes — three parallel jobs: lint and security scan
+(TFLint, Checkov, `terraform fmt`), terraform test with mocked providers (matrix
+strategy runs both SCPs and cleanup modules), and `terraform plan` with PR comment.
+The plan job depends on both lint and test jobs passing first. No AWS credentials
+needed for the test job (mocked providers only).
+
+### quality-checks.yml
+
+Repo-wide quality — runs on every PR and push to main. Jobs: markdownlint, link
+checking, shellcheck, yamllint, zizmor (actions security), file structure validation,
+README quality check, Vale (prose linting). Each job posts a `$GITHUB_STEP_SUMMARY`.
+This workflow validates the repository as a whole, not Terraform specifically.
+
+### security.yml
+
+Security scanning — runs on every PR and push to main. Semgrep SAST and Trivy IaC
+scanning. Each job posts a `$GITHUB_STEP_SUMMARY`. The terraform-cicd quality gate
+polls for this workflow and `quality-checks.yml` to pass before allowing apply.
 
 ### drift-detection.yml
 
@@ -188,17 +238,6 @@ Daily at 9 AM UTC — detects config drift, creates GitHub issue.
 ### update-pre-commit-hooks.yml
 
 Weekly auto-update of pre-commit hook versions via PR.
-
-### quality-checks.yml
-
-Runs on every PR and push to main — markdownlint, link checking, shellcheck, yamllint,
-zizmor, file structure validation, README quality check, Vale (prose linting).
-Each job posts a `$GITHUB_STEP_SUMMARY` with scan counts and status.
-
-### security.yml
-
-Runs on every PR and push to main — Semgrep SAST and Trivy IaC scanning.
-Each job posts a `$GITHUB_STEP_SUMMARY` with config details and status.
 
 ### Dependabot
 
