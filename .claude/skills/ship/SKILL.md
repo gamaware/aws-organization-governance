@@ -116,11 +116,19 @@ passes, resolve all remaining threads in bulk.
 
 ## Phase 5 — Merge
 
-Once ALL of the following are true:
+### Merge gate
 
-- All CI checks pass
-- CodeRabbit review has no unaddressed comments
-- Copilot review has no unaddressed comments
+Verify ALL of these before running `gh pr merge`:
+
+1. `gh pr checks <number>` shows ALL checks as `pass` — zero `pending`.
+   This includes CodeRabbit (must NOT show "Review in progress").
+2. CodeRabbit review has no unaddressed comments.
+3. Copilot review has no unaddressed comments (if enabled).
+4. All review threads are resolved.
+
+If CodeRabbit or any check is still `pending`, poll every 30 seconds.
+Do NOT merge while anything is pending — even with `--admin`. If a
+reviewer takes more than 10 minutes, ask the user before proceeding.
 
 Then merge:
 

@@ -1,4 +1,12 @@
+# -----------------------------------------------------------------
+# Drift Detection — daily check for SCP configuration drift
+#
+# Runs on: daily at 9 AM UTC, manual dispatch
+# Jobs: terraform plan -detailed-exitcode, creates GitHub issue on drift
+# Concurrency: terraform-state (shared with terraform-cicd)
+# -----------------------------------------------------------------
 name: Drift Detection
+run-name: "Drift Detection (${{ github.event_name }})"
 
 on:
   schedule:

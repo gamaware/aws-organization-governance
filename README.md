@@ -188,8 +188,7 @@ graph LR
 | --- | --- | --- |
 | `terraform-cicd.yml` | Push to main, manual | Plan → environment approval → apply (artifact reuse), manual destroy |
 | `terraform-pr.yml` | PR | Lint (fmt, tflint), security (checkov), terraform test (mocked), plan |
-| `quality-checks.yml` | PR, push to main | Markdownlint, shellcheck, yamllint, zizmor, structure validation (step summaries) |
-| `security.yml` | PR, push to main | Semgrep SAST, Trivy IaC scanning (step summaries) |
+| `ci-checks.yml` | PR, push to main | Quality + security: markdownlint, shellcheck, yamllint, zizmor, Semgrep, Trivy (step summaries) |
 | `drift-detection.yml` | Daily 9 AM UTC | Detects config drift, creates GitHub issue |
 | `update-pre-commit-hooks.yml` | Weekly Sunday | Auto-updates hook versions, creates PR |
 

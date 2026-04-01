@@ -1,3 +1,11 @@
+# -----------------------------------------------------------------
+# Terraform CI/CD — deploys SCPs to AWS Organizations
+#
+# Runs on: push to main (terraform/scps/**), manual dispatch
+# Jobs: quality gate → plan → apply (production gate) → validation
+#       → AI analysis → Terratest integration tests
+# Concurrency: terraform-state (serialized, no cancel-in-progress)
+# -----------------------------------------------------------------
 name: Terraform CI/CD
 run-name: >-
   ${{ github.event_name == 'workflow_dispatch'
@@ -142,7 +150,19 @@ jobs:
           AWS_REGION: ${{ vars.TF_VAR_aws_region }}
           TF_WORKING_DIR: ${{ github.workspace }}/terraform/scps
           TF_VAR_dev_ou_id: ${{ vars.TF_VAR_dev_ou_id }}
-        run: go test -v -timeout 5m -run TestSCPs ./...
+        shell: bash
+        run: |
+          set +eo pipefail
+          go test -v -timeout 5m -run TestSCPs ./... 2>&1 | tee test-output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          set -eo pipefail
+          {
+            echo "### Integration Tests: SCPs"
+            echo '```'
+            grep -E '(PASS|FAIL|ok |--- )' test-output.txt || tail -20 test-output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$EXIT_CODE"
 
   terraform-destroy:
     name: Terraform Destroy

@@ -1,10 +1,22 @@
-name: Quality Checks
+# -----------------------------------------------------------------
+# CI Checks — repo-wide quality and security validation
+#
+# Runs on: every PR and push to main (all files, no path filtering)
+# Jobs: markdownlint, shellcheck, yamllint, Vale, zizmor, Semgrep, Trivy, etc.
+# Gate: terraform-cicd quality gate polls this workflow before allowing apply
+# -----------------------------------------------------------------
+name: CI Checks
+run-name: "CI Checks (${{ github.event_name }})"
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+
+concurrency:
+  group: ci-checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   link-checker:
@@ -301,5 +313,65 @@ jobs:
             echo ""
             echo "- Files scanned: $MD_COUNT"
             echo "- Styles: write-good, proselint"
+            echo "- Status: $STATUS"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  semgrep:
+    name: Semgrep SAST
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install and run Semgrep
+        id: semgrep
+        run: |
+          pip install semgrep
+          semgrep scan --config p/default --config p/terraform --error .
+
+      - name: Post summary
+        if: always()
+        run: |
+          STATUS="${{ steps.semgrep.outcome == 'success' && 'Passed' || 'Failed' }}"
+          {
+            echo "## Semgrep SAST Results"
+            echo ""
+            echo "- Config: \`p/default\`, \`p/terraform\`"
+            echo "- Status: $STATUS"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  trivy:
+    name: Trivy IaC Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run Trivy IaC scanner
+        id: trivy
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          scan-type: 'config'
+          scan-ref: 'terraform/'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
+
+      - name: Post summary
+        if: always()
+        run: |
+          STATUS="${{ steps.trivy.outcome == 'success' && 'Passed' || 'Failed' }}"
+          {
+            echo "## Trivy IaC Scan Results"
+            echo ""
+            echo "- Scan target: \`terraform/\`"
+            echo "- Severity filter: HIGH, CRITICAL"
             echo "- Status: $STATUS"
           } >> "$GITHUB_STEP_SUMMARY"
