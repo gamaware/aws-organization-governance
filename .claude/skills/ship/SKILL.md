@@ -116,7 +116,9 @@ passes, resolve all remaining threads in bulk.
 
 ## Phase 5 — Merge
 
-**BLOCKING GATE** — verify ALL of these before running `gh pr merge`:
+### Merge gate
+
+Verify ALL of these before running `gh pr merge`:
 
 1. `gh pr checks <number>` shows ALL checks as `pass` — zero `pending`.
    This includes CodeRabbit (must NOT show "Review in progress").

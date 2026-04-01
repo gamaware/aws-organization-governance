@@ -77,8 +77,10 @@ jobs:
         working-directory: terraform/${{ matrix.module }}
         shell: bash
         run: |
+          set +eo pipefail
           terraform test -verbose 2>&1 | tee test-output.txt
           EXIT_CODE=${PIPESTATUS[0]}
+          set -eo pipefail
           {
             echo "### Terraform Test: ${{ matrix.module }}"
             echo '```'

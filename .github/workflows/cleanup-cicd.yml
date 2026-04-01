@@ -136,8 +136,10 @@ jobs:
           TF_WORKING_DIR: ${{ github.workspace }}/terraform/cleanup
         shell: bash
         run: |
+          set +eo pipefail
           go test -v -timeout 10m -run TestCleanup ./... 2>&1 | tee test-output.txt
           EXIT_CODE=${PIPESTATUS[0]}
+          set -eo pipefail
           {
             echo "### Integration Tests: Cleanup"
             echo '```'

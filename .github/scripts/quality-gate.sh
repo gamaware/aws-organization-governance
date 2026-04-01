@@ -14,7 +14,8 @@ i=0
 while [ "$i" -lt "$MAX_ATTEMPTS" ]; do
   i=$((i + 1))
   CI_STATUS=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$SHA&event=push" \
-    --jq '.workflow_runs[] | select(.name == "CI Checks") | .conclusion' 2>/dev/null || echo "pending")
+    --jq '[.workflow_runs[] | select(.name == "CI Checks") | .conclusion] | first // empty' 2>/dev/null || echo "pending")
+  CI_STATUS="${CI_STATUS:-pending}"
 
   echo "Attempt $i/$MAX_ATTEMPTS — CI Checks: $CI_STATUS"
 
