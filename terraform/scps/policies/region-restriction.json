@@ -41,6 +41,11 @@
           "aws:RequestedRegion": [
             "us-east-1"
           ]
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_AdministratorAccess_*"
+          ]
         }
       }
     },
