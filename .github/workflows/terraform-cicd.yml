@@ -92,6 +92,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: terraform-plan
+    if: always() && needs.terraform-plan.result == 'success'
     environment: production
     permissions:
       id-token: write
