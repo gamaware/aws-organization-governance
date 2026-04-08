@@ -218,6 +218,11 @@
             "*.metal",
             "*.metal-*"
           ]
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_AdministratorAccess_*"
+          ]
         }
       }
     },
@@ -236,6 +241,11 @@
             "ml.t2.*",
             "ml.t3.*"
           ]
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_AdministratorAccess_*"
+          ]
         }
       }
     },
@@ -248,7 +258,14 @@
         "aws-marketplace:Subscribe",
         "aws-marketplace:AcceptAgreementApprovalRequest"
       ],
-      "Resource": "*"
+      "Resource": "*",
+      "Condition": {
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_AdministratorAccess_*"
+          ]
+        }
+      }
     },
     {
       "Sid": "DenyLargeEBSVolumes",
@@ -261,6 +278,11 @@
       "Condition": {
         "NumericGreaterThan": {
           "ec2:VolumeSize": "100"
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_AdministratorAccess_*"
+          ]
         }
       }
     },
@@ -273,7 +295,14 @@
         "rds:ModifyDBClusterSnapshotAttribute",
         "ec2:ModifySnapshotAttribute"
       ],
-      "Resource": "*"
+      "Resource": "*",
+      "Condition": {
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_AdministratorAccess_*"
+          ]
+        }
+      }
     }
   ]
 }

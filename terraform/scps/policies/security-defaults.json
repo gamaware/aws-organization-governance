@@ -7,7 +7,14 @@
       "Action": [
         "ec2:DisableEbsEncryptionByDefault"
       ],
-      "Resource": "*"
+      "Resource": "*",
+      "Condition": {
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_AdministratorAccess_*"
+          ]
+        }
+      }
     },
     {
       "Sid": "DenyIMDSv1",
@@ -19,6 +26,11 @@
       "Condition": {
         "StringNotEquals": {
           "ec2:MetadataHttpTokens": "required"
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_AdministratorAccess_*"
+          ]
         }
       }
     },
@@ -28,7 +40,14 @@
       "Action": [
         "s3:DeleteAccountPublicAccessBlock"
       ],
-      "Resource": "*"
+      "Resource": "*",
+      "Condition": {
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_AdministratorAccess_*"
+          ]
+        }
+      }
     }
   ]
 }

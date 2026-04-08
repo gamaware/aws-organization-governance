@@ -17,6 +17,11 @@
             "t3a.*",
             "t4g.*"
           ]
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_AdministratorAccess_*"
+          ]
         }
       }
     },
@@ -41,6 +46,11 @@
             "db.t3.*",
             "db.t4g.*"
           ]
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_AdministratorAccess_*"
+          ]
         }
       }
     },
@@ -62,6 +72,11 @@
         },
         "Null": {
           "rds:DatabaseClass": "false"
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_AdministratorAccess_*"
+          ]
         }
       }
     },
@@ -69,7 +84,14 @@
       "Sid": "DenyLeavingOrganization",
       "Effect": "Deny",
       "Action": "organizations:LeaveOrganization",
-      "Resource": "*"
+      "Resource": "*",
+      "Condition": {
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_AdministratorAccess_*"
+          ]
+        }
+      }
     },
     {
       "Sid": "DenyRootUserActions",
@@ -91,7 +113,14 @@
         "cloudtrail:UpdateTrail",
         "cloudtrail:PutEventSelectors"
       ],
-      "Resource": "*"
+      "Resource": "*",
+      "Condition": {
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_AdministratorAccess_*"
+          ]
+        }
+      }
     },
     {
       "Sid": "DenyReservedInstancePurchase",
@@ -103,7 +132,14 @@
         "redshift:PurchaseReservedNodeOffering",
         "dynamodb:PurchaseReservedCapacityOfferings"
       ],
-      "Resource": "*"
+      "Resource": "*",
+      "Condition": {
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_AdministratorAccess_*"
+          ]
+        }
+      }
     },
     {
       "Sid": "DenyAdminPolicyAttachment",
@@ -119,6 +155,11 @@
           "iam:PolicyARN": [
             "arn:aws:iam::aws:policy/AdministratorAccess",
             "arn:aws:iam::aws:policy/IAMFullAccess"
+          ]
+        },
+        "ArnNotLike": {
+          "aws:PrincipalArn": [
+            "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*AWSReservedSSO_AdministratorAccess_*"
           ]
         }
       }
