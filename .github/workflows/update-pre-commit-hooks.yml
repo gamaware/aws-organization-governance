@@ -21,6 +21,7 @@ jobs:
     name: Update Pre-commit Hooks
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    environment: development
     permissions:
       contents: write
       pull-requests: write
