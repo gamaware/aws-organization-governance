@@ -50,10 +50,12 @@ No modules.
 
 | Name | Description |
 | ---- | ----------- |
+| dev\_abuse\_scp\_arn | Dev Abuse Prevention SCP Policy ARN |
+| dev\_abuse\_scp\_id | Dev Abuse Prevention SCP Policy ID |
 | dev\_scp\_arn | Dev SCP Policy ARN |
 | dev\_scp\_id | Dev SCP Policy ID |
-| dev\_tagging\_scp\_arn | Dev Tagging and Abuse Prevention SCP Policy ARN |
-| dev\_tagging\_scp\_id | Dev Tagging and Abuse Prevention SCP Policy ID |
+| dev\_tagging\_scp\_arn | Dev Tagging Enforcement SCP Policy ARN |
+| dev\_tagging\_scp\_id | Dev Tagging Enforcement SCP Policy ID |
 | organization\_id | AWS Organization ID |
 | region\_restriction\_scp\_arn | Region Restriction SCP Policy ARN |
 | region\_restriction\_scp\_id | Region Restriction SCP Policy ID |

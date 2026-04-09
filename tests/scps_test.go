@@ -24,7 +24,8 @@ func allSCPs() []scpInfo {
 	return []scpInfo{
 		{idOutput: "dev_scp_id", arnOutput: "dev_scp_arn", policyName: "DevEnvironmentRestrictions"},
 		{idOutput: "sso_protection_scp_id", arnOutput: "sso_protection_scp_arn", policyName: "ProtectSSOTrustedAccess"},
-		{idOutput: "dev_tagging_scp_id", arnOutput: "dev_tagging_scp_arn", policyName: "DevTaggingAndAbusePrevention"},
+		{idOutput: "dev_tagging_scp_id", arnOutput: "dev_tagging_scp_arn", policyName: "DevTaggingEnforcement"},
+		{idOutput: "dev_abuse_scp_id", arnOutput: "dev_abuse_scp_arn", policyName: "DevAbusePrevention"},
 		{idOutput: "security_defaults_scp_id", arnOutput: "security_defaults_scp_arn", policyName: "SecurityDefaults"},
 		{idOutput: "region_restriction_scp_id", arnOutput: "region_restriction_scp_arn", policyName: "RegionRestriction"},
 	}
