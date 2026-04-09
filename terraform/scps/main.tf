@@ -11,16 +11,29 @@ resource "aws_organizations_policy_attachment" "dev_scp_attachment" {
   target_id = var.dev_ou_id
 }
 
-# Dev OU — Required tagging and abuse prevention
+# Dev OU — Required tagging (Team/Name tags)
 resource "aws_organizations_policy" "dev_tagging" {
-  name        = "DevTaggingAndAbusePrevention"
-  description = "Require Team/Name tags and block abusable resources"
+  name        = "DevTaggingEnforcement"
+  description = "Require Team/Name tags on resource creation"
   type        = "SERVICE_CONTROL_POLICY"
-  content     = jsonencode(jsondecode(file("${path.module}/policies/dev-tagging-and-abuse.json")))
+  content     = jsonencode(jsondecode(file("${path.module}/policies/dev-tagging.json")))
 }
 
 resource "aws_organizations_policy_attachment" "dev_tagging_attachment" {
   policy_id = aws_organizations_policy.dev_tagging.id
+  target_id = var.dev_ou_id
+}
+
+# Dev OU — Abuse prevention (costly instances, abusable services)
+resource "aws_organizations_policy" "dev_abuse" {
+  name        = "DevAbusePrevention"
+  description = "Block GPU/metal instances, expensive SageMaker, abusable services, large EBS, public data"
+  type        = "SERVICE_CONTROL_POLICY"
+  content     = file("${path.module}/policies/dev-abuse.json")
+}
+
+resource "aws_organizations_policy_attachment" "dev_abuse_attachment" {
+  policy_id = aws_organizations_policy.dev_abuse.id
   target_id = var.dev_ou_id
 }
 
