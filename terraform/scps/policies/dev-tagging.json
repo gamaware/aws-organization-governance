@@ -42,7 +42,9 @@
           "aws:PrincipalArn": [
             "arn:aws:iam::*:role/*AWSReservedSSO_*",
             "arn:aws:iam::*:role/Organization*",
-            "arn:aws:iam::*:role/cleanup-*"
+            "arn:aws:iam::*:role/cleanup-*",
+            "arn:aws:iam::*:role/*-cluster-*",
+            "arn:aws:iam::*:role/*-eks-node-group-*"
           ]
         }
       }
@@ -88,7 +90,9 @@
           "aws:PrincipalArn": [
             "arn:aws:iam::*:role/*AWSReservedSSO_*",
             "arn:aws:iam::*:role/Organization*",
-            "arn:aws:iam::*:role/cleanup-*"
+            "arn:aws:iam::*:role/cleanup-*",
+            "arn:aws:iam::*:role/*-cluster-*",
+            "arn:aws:iam::*:role/*-eks-node-group-*"
           ]
         }
       }
@@ -145,7 +149,9 @@
           "aws:PrincipalArn": [
             "arn:aws:iam::*:role/*AWSReservedSSO_*",
             "arn:aws:iam::*:role/Organization*",
-            "arn:aws:iam::*:role/cleanup-*"
+            "arn:aws:iam::*:role/cleanup-*",
+            "arn:aws:iam::*:role/*-cluster-*",
+            "arn:aws:iam::*:role/*-eks-node-group-*"
           ]
         }
       }
@@ -194,86 +200,12 @@
           "aws:PrincipalArn": [
             "arn:aws:iam::*:role/*AWSReservedSSO_*",
             "arn:aws:iam::*:role/Organization*",
-            "arn:aws:iam::*:role/cleanup-*"
+            "arn:aws:iam::*:role/cleanup-*",
+            "arn:aws:iam::*:role/*-cluster-*",
+            "arn:aws:iam::*:role/*-eks-node-group-*"
           ]
         }
       }
-    },
-    {
-      "Sid": "DenyGPUAndMetalInstances",
-      "Effect": "Deny",
-      "Action": [
-        "ec2:RunInstances",
-        "ec2:StartInstances"
-      ],
-      "Resource": "arn:aws:ec2:*:*:instance/*",
-      "Condition": {
-        "StringLike": {
-          "ec2:InstanceType": [
-            "p*",
-            "g*",
-            "inf*",
-            "trn*",
-            "dl*",
-            "*.metal",
-            "*.metal-*"
-          ]
-        }
-      }
-    },
-    {
-      "Sid": "DenySageMakerExpensiveInstances",
-      "Effect": "Deny",
-      "Action": [
-        "sagemaker:CreateNotebookInstance",
-        "sagemaker:CreateEndpointConfig",
-        "sagemaker:CreateTrainingJob"
-      ],
-      "Resource": "*",
-      "Condition": {
-        "StringNotLike": {
-          "sagemaker:InstanceType": [
-            "ml.t2.*",
-            "ml.t3.*"
-          ]
-        }
-      }
-    },
-    {
-      "Sid": "DenyAbusableServices",
-      "Effect": "Deny",
-      "Action": [
-        "lightsail:*",
-        "gamelift:*",
-        "aws-marketplace:Subscribe",
-        "aws-marketplace:AcceptAgreementApprovalRequest"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Sid": "DenyLargeEBSVolumes",
-      "Effect": "Deny",
-      "Action": [
-        "ec2:CreateVolume",
-        "ec2:RunInstances"
-      ],
-      "Resource": "arn:aws:ec2:*:*:volume/*",
-      "Condition": {
-        "NumericGreaterThan": {
-          "ec2:VolumeSize": "100"
-        }
-      }
-    },
-    {
-      "Sid": "DenyPublicDataExposure",
-      "Effect": "Deny",
-      "Action": [
-        "s3:DeletePublicAccessBlock",
-        "rds:ModifyDBSnapshotAttribute",
-        "rds:ModifyDBClusterSnapshotAttribute",
-        "ec2:ModifySnapshotAttribute"
-      ],
-      "Resource": "*"
     }
   ]
 }
