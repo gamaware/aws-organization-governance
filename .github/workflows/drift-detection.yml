@@ -32,7 +32,7 @@ jobs:
       TF_VAR_aws_region: ${{ vars.TF_VAR_aws_region }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
