@@ -21,6 +21,10 @@ jobs:
     name: Update Pre-commit Hooks
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Same environment as auto-merge-bot-prs.yml: no protection rules, only
+    # there so PRE_COMMIT_PAT is read inside a job environment (zizmor
+    # secrets-outside-env). GitHub creates it on first use.
+    environment: automation
     permissions:
       contents: write
       pull-requests: write

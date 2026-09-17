@@ -230,8 +230,9 @@ Daily at 9 AM UTC — detects config drift, creates GitHub issue.
 
 ### update-pre-commit-hooks.yml
 
-Weekly auto-update of pre-commit hook versions via PR. Not gated by an
-environment; it only opens a PR.
+Weekly auto-update of pre-commit hook versions via PR. Runs in the
+`automation` environment, which has no protection rules and exists only so
+`PRE_COMMIT_PAT` is read inside a job environment; it only opens a PR.
 
 ### auto-merge-bot-prs.yml
 
@@ -243,6 +244,7 @@ authored by the repository owner. Skips drafts, conflicting PRs, PRs with
 failing checks, and PRs with no registered checks; PRs behind `main` are
 updated and retried on the next run. Admin bypass is required because GitHub
 rejects self-approval, so a review-based auto-merge can never satisfy CODEOWNERS.
+Runs in the same unprotected `automation` environment as the pre-commit update.
 
 ### Dependabot
 
