@@ -187,6 +187,8 @@ graph TB
         M1[Daily: Drift Detection] -->|Drift found| M2[Create GitHub Issue]
         M3[Weekly: Dependabot] --> E
         M4[Weekly: Pre-commit Update] --> E
+        G -->|Yes, bot PR| M5[Hourly: Auto-merge green bot PRs]
+        M5 --> J
     end
 ```
 
@@ -474,7 +476,8 @@ sequenceDiagram
 
 - Dependabot: weekly updates for GitHub Actions + Terraform providers
 - Pre-commit autoupdate: weekly hook version updates
-- Both auto-create PRs for review
+- Both auto-create PRs; an hourly job squash-merges them with admin bypass once
+  every check is green (no self-approval is possible under CODEOWNERS)
 
 ### Preventive Controls (SCPs)
 

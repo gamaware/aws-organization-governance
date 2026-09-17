@@ -48,6 +48,7 @@ docs/
   settings.json               # Claude Code hooks configuration
   hooks/                      # Hook scripts (post-edit, protect-generated)
   skills/new-scp/             # Scaffold new SCP (/new-scp skill)
+  skills/ship-it/             # PR lifecycle, local override (/ship-it skill)
 ```
 
 ### SCP Naming
@@ -229,11 +230,26 @@ Daily at 9 AM UTC — detects config drift, creates GitHub issue.
 
 ### update-pre-commit-hooks.yml
 
-Weekly auto-update of pre-commit hook versions via PR.
+Weekly auto-update of pre-commit hook versions via PR. Runs in the
+`automation` environment, which has no protection rules and exists only so
+`PRE_COMMIT_PAT` is read inside a job environment; it only opens a PR.
+
+### auto-merge-bot-prs.yml
+
+Hourly scheduled job (also manual dispatch). Squash-merges open Dependabot PRs
+and `chore/update-pre-commit-hooks` PRs using the owner's `PRE_COMMIT_PAT` with
+admin bypass, but only when every check is green and none is pending. Only
+same-repository PRs qualify (never forks), and the pre-commit branch must be
+authored by the repository owner. Skips drafts, conflicting PRs, PRs with
+failing checks, and PRs with no registered checks; PRs behind `main` are
+updated and retried on the next run. Admin bypass is required because GitHub
+rejects self-approval, so a review-based auto-merge can never satisfy CODEOWNERS.
+Runs in the same unprotected `automation` environment as the pre-commit update.
 
 ### Dependabot
 
-Monitors GitHub Actions and Terraform provider dependencies weekly.
+Monitors GitHub Actions and Terraform provider dependencies weekly, with a
+7-day cooldown so brand-new releases settle before a PR is opened.
 
 ## Testing
 
@@ -308,10 +324,12 @@ existing pattern (Status, Context, Decision, Consequences).
 - **`/new-scp`** — Scaffolds a new SCP: creates JSON policy file, adds Terraform
   resource and attachment in `main.tf`, adds outputs, updates validation scripts.
   Usage: `/new-scp policy-name target-type` (e.g., `/new-scp data-protection ou`).
-- **`/ship`** — End-to-end shipping workflow: updates docs (CLAUDE.md, README,
-  ADRs, MEMORY), commits, creates PR, monitors CI checks, waits for CodeRabbit
-  and Copilot reviews, addresses feedback, and merges when everything passes.
-  Usage: `/ship` or `/ship 25` (to resume monitoring an existing PR).
+- **`/ship-it`** — End-to-end shipping workflow: updates docs (CLAUDE.md, README,
+  ADRs, MEMORY, accepted-findings.md), commits, creates PR, monitors CI checks,
+  waits for CodeRabbit and Copilot reviews, addresses feedback, merges, monitors
+  terraform deploy with AI analysis, and cleans up stale local branches.
+  Usage: `/ship-it` or `/ship-it 25` (to resume monitoring an existing PR).
+  Local override adds terraform post-deploy with AI analysis.
 
 ## Security
 

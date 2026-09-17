@@ -1,8 +1,9 @@
 ---
-name: ship
+name: ship-it
 description: >-
   End-to-end PR lifecycle: update docs, commit, create PR, monitor CI,
-  address CodeRabbit and Copilot reviews, and merge. Use this skill
+  address CodeRabbit and Copilot reviews, merge, monitor terraform
+  deploy with AI analysis, and clean up stale branches. Use this skill
   whenever the user says "ship it", "send a PR", "commit and merge",
   "push this", or wants to finalize and land their changes. Pass a PR
   number to resume monitoring an existing PR.
@@ -11,10 +12,11 @@ user-invocable: true
 argument-hint: "[optional PR number to resume monitoring]"
 ---
 
-# Ship — Commit, Monitor, Fix, Merge
+# Ship It — Commit, Monitor, Fix, Merge, Deploy, Clean Up
 
 End-to-end workflow: update documentation, commit, create PR, monitor CI
-and code reviews, address feedback, and merge when everything passes.
+and code reviews, address feedback, merge when everything passes, watch
+terraform deploy with AI analysis, and clean up stale local branches.
 
 If `$ARGUMENTS` contains a PR number, skip to the monitoring phase for
 that PR.
@@ -197,6 +199,44 @@ Review the analysis output:
 3. **Regressions detected** (fixed item reappeared) — Flag immediately
    to the user. These indicate a revert or merge conflict that undid
    a previous fix.
+
+## Phase 7 — Clean Up Stale Branches
+
+After merge (and post-deploy if applicable), prune remote tracking refs
+and delete local branches that have been removed from the remote:
+
+```bash
+git fetch --prune
+```
+
+Then check for and remove any stale local branches:
+
+```bash
+git for-each-ref --format='%(refname:short) %(upstream:track)' refs/heads \
+  | awk '$2 == "[gone]" { print $1 }' | while read -r branch; do
+  echo "Processing branch: $branch"
+  # Only prune branches whose tip was merged through a PR; keep anything else.
+  tip=$(git rev-parse "$branch")
+  merged=$(gh pr list --state merged --head "$branch" --json headRefOid \
+    --jq '.[].headRefOid' | grep -cx "$tip" || true)
+  if [ "$merged" -eq 0 ]; then
+    echo "  Kept: $branch (tip $tip not merged through a PR)"
+    continue
+  fi
+  worktree=$(git worktree list --porcelain \
+    | awk -v ref="branch refs/heads/$branch" '/^worktree / { wt = substr($0, 10) } $0 == ref { print wt }')
+  if [ -n "$worktree" ] && [ "$worktree" != "$(git rev-parse --show-toplevel)" ]; then
+    echo "  Removing worktree: $worktree"
+    git worktree remove "$worktree"
+  fi
+  echo "  Deleting branch: $branch"
+  git branch -D "$branch"
+done
+```
+
+If no branches are marked as `[gone]`, report that no cleanup was needed. A
+branch that is kept has local commits that never reached a merged PR, or a
+dirty worktree that `git worktree remove` refused; leave it for the user.
 
 ## Rules
 

@@ -86,10 +86,13 @@ aws sts get-caller-identity
 │   │   ├── validate-deployment.sh         # Post-apply validation
 │   │   └── validate-destroy.sh            # Post-destroy validation
 │   ├── workflows/
+│   │   ├── ci-checks.yml                 # Repo-wide quality + security checks
+│   │   ├── cleanup-cicd.yml              # Cleanup module pipeline
 │   │   ├── terraform-cicd.yml             # Main CI/CD pipeline
 │   │   ├── terraform-pr.yml              # PR checks (lint + security + plan)
 │   │   ├── drift-detection.yml           # Daily drift detection
-│   │   └── update-pre-commit-hooks.yml   # Weekly pre-commit autoupdate
+│   │   ├── update-pre-commit-hooks.yml   # Weekly pre-commit autoupdate
+│   │   └── auto-merge-bot-prs.yml        # Hourly merge of green bot PRs
 │   └── dependabot.yml                    # GitHub Actions + Terraform updates
 ├── terraform/scps/
 │   ├── backend.tf                         # S3 backend with native locking
@@ -112,7 +115,8 @@ aws sts get-caller-identity
 ├── .claude/
 │   ├── settings.json                      # Claude Code hooks configuration
 │   ├── hooks/                             # Hook scripts (post-edit, protect-generated)
-│   └── skills/new-scp/                    # SCP scaffolding skill
+│   ├── skills/new-scp/                    # SCP scaffolding skill
+│   └── skills/ship-it/                    # PR lifecycle skill (local override)
 ├── .coderabbit.yaml                       # CodeRabbit AI review config
 ├── .tflint.hcl                            # TFLint configuration
 ├── .pre-commit-config.yaml               # Pre-commit hook configuration
@@ -191,6 +195,7 @@ graph LR
 | `ci-checks.yml` | PR, push to main | Quality + security: markdownlint, shellcheck, yamllint, zizmor, Semgrep, Trivy (step summaries) |
 | `drift-detection.yml` | Daily 9 AM UTC | Detects config drift, creates GitHub issue |
 | `update-pre-commit-hooks.yml` | Weekly Sunday | Auto-updates hook versions, creates PR |
+| `auto-merge-bot-prs.yml` | Hourly, manual | Squash-merges Dependabot and pre-commit PRs (admin bypass) once all checks are green |
 
 ### Authentication
 
@@ -214,7 +219,7 @@ See [GitHub OIDC Setup Guide](docs/github-oidc-setup.md).
 | AI deployment analysis | Claude via Bedrock — security posture, SCP conflicts, recommendations |
 | Post-destroy validation | AWS CLI checks — SCPs removed, no orphaned policies |
 | Drift detection | Daily scheduled plan, auto-creates issue on drift |
-| Automated updates | Dependabot + pre-commit autoupdate |
+| Automated updates | Dependabot + pre-commit autoupdate, merged hourly once all checks pass |
 
 ## Architecture Diagrams
 
