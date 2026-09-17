@@ -212,10 +212,12 @@ git fetch --prune
 Then check for and remove any stale local branches:
 
 ```bash
-git branch -v | grep '\[gone\]' | sed 's/^[+* ]//' | awk '{print $1}' | while read branch; do
+git for-each-ref --format='%(refname:short) %(upstream:track)' refs/heads \
+  | awk '$2 == "[gone]" { print $1 }' | while read -r branch; do
   echo "Processing branch: $branch"
-  worktree=$(git worktree list | grep "\\[$branch\\]" | awk '{print $1}')
-  if [ ! -z "$worktree" ] && [ "$worktree" != "$(git rev-parse --show-toplevel)" ]; then
+  worktree=$(git worktree list --porcelain \
+    | awk -v ref="branch refs/heads/$branch" '/^worktree / { wt = substr($0, 10) } $0 == ref { print wt }')
+  if [ -n "$worktree" ] && [ "$worktree" != "$(git rev-parse --show-toplevel)" ]; then
     echo "  Removing worktree: $worktree"
     git worktree remove --force "$worktree"
   fi
