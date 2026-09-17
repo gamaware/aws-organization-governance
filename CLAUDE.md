@@ -48,6 +48,7 @@ docs/
   settings.json               # Claude Code hooks configuration
   hooks/                      # Hook scripts (post-edit, protect-generated)
   skills/new-scp/             # Scaffold new SCP (/new-scp skill)
+  skills/ship-it/             # PR lifecycle, local override (/ship-it skill)
 ```
 
 ### SCP Naming
@@ -308,10 +309,12 @@ existing pattern (Status, Context, Decision, Consequences).
 - **`/new-scp`** — Scaffolds a new SCP: creates JSON policy file, adds Terraform
   resource and attachment in `main.tf`, adds outputs, updates validation scripts.
   Usage: `/new-scp policy-name target-type` (e.g., `/new-scp data-protection ou`).
-- **`/ship`** — End-to-end shipping workflow: updates docs (CLAUDE.md, README,
-  ADRs, MEMORY), commits, creates PR, monitors CI checks, waits for CodeRabbit
-  and Copilot reviews, addresses feedback, and merges when everything passes.
-  Usage: `/ship` or `/ship 25` (to resume monitoring an existing PR).
+- **`/ship-it`** — End-to-end shipping workflow: updates docs (CLAUDE.md, README,
+  ADRs, MEMORY, accepted-findings.md), commits, creates PR, monitors CI checks,
+  waits for CodeRabbit and Copilot reviews, addresses feedback, merges, monitors
+  terraform deploy with AI analysis, and cleans up stale local branches.
+  Usage: `/ship-it` or `/ship-it 25` (to resume monitoring an existing PR).
+  Local override adds terraform post-deploy with AI analysis.
 
 ## Security
 

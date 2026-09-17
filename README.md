@@ -112,7 +112,8 @@ aws sts get-caller-identity
 ├── .claude/
 │   ├── settings.json                      # Claude Code hooks configuration
 │   ├── hooks/                             # Hook scripts (post-edit, protect-generated)
-│   └── skills/new-scp/                    # SCP scaffolding skill
+│   ├── skills/new-scp/                    # SCP scaffolding skill
+│   └── skills/ship-it/                    # PR lifecycle skill (local override)
 ├── .coderabbit.yaml                       # CodeRabbit AI review config
 ├── .tflint.hcl                            # TFLint configuration
 ├── .pre-commit-config.yaml               # Pre-commit hook configuration
