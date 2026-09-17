@@ -82,12 +82,14 @@ repos:
     hooks:
       - id: actionlint
 
-  - repo: local
+  # Keep in sync with ZIZMOR_VERSION in ci-checks.yml so local and CI agree.
+  # zizmor >= 1.30 requires the `$/` self-repository syntax, which actionlint
+  # does not accept yet (rhysd/actionlint#711), so stay on 1.29 until it does.
+  - repo: https://github.com/woodruffw/zizmor-pre-commit
+    rev: v1.29.0
     hooks:
       - id: zizmor
-        name: zizmor
-        entry: zizmor --config zizmor.yml .github/workflows/
-        language: system
+        args: ["--config", "zizmor.yml", ".github/workflows/"]
         files: ^\.github/workflows/.*\.ya?ml$
         pass_filenames: false
 
