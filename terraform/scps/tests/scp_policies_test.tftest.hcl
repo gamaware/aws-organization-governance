@@ -68,8 +68,8 @@ run "scp_configuration" {
   }
 
   assert {
-    condition     = aws_organizations_policy.dev_tagging.name == "DevTaggingAndAbusePrevention"
-    error_message = "dev_tagging name must be DevTaggingAndAbusePrevention"
+    condition     = aws_organizations_policy.dev_tagging.name == "DevTaggingEnforcement"
+    error_message = "dev_tagging name must be DevTaggingEnforcement"
   }
 
   assert {
