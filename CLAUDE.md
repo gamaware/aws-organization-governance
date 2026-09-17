@@ -230,11 +230,24 @@ Daily at 9 AM UTC — detects config drift, creates GitHub issue.
 
 ### update-pre-commit-hooks.yml
 
-Weekly auto-update of pre-commit hook versions via PR.
+Weekly auto-update of pre-commit hook versions via PR. Not gated by an
+environment; it only opens a PR.
+
+### auto-merge-bot-prs.yml
+
+Hourly scheduled job (also manual dispatch). Squash-merges open Dependabot PRs
+and `chore/update-pre-commit-hooks` PRs using the owner's `PRE_COMMIT_PAT` with
+admin bypass, but only when every check is green and none is pending. Only
+same-repository PRs qualify (never forks), and the pre-commit branch must be
+authored by the repository owner. Skips drafts, conflicting PRs, PRs with
+failing checks, and PRs with no registered checks; PRs behind `main` are
+updated and retried on the next run. Admin bypass is required because GitHub
+rejects self-approval, so a review-based auto-merge can never satisfy CODEOWNERS.
 
 ### Dependabot
 
-Monitors GitHub Actions and Terraform provider dependencies weekly.
+Monitors GitHub Actions and Terraform provider dependencies weekly, with a
+7-day cooldown so brand-new releases settle before a PR is opened.
 
 ## Testing
 
