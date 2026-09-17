@@ -50,3 +50,6 @@ credentials.json
 
 # Kiro
 .kiro/
+
+# Cleanup Lambda build artifact (generated at plan time)
+terraform/cleanup/*.zip
