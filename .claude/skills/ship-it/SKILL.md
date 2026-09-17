@@ -215,18 +215,28 @@ Then check for and remove any stale local branches:
 git for-each-ref --format='%(refname:short) %(upstream:track)' refs/heads \
   | awk '$2 == "[gone]" { print $1 }' | while read -r branch; do
   echo "Processing branch: $branch"
+  # Only prune branches whose tip was merged through a PR; keep anything else.
+  tip=$(git rev-parse "$branch")
+  merged=$(gh pr list --state merged --head "$branch" --json headRefOid \
+    --jq '.[].headRefOid' | grep -cx "$tip" || true)
+  if [ "$merged" -eq 0 ]; then
+    echo "  Kept: $branch (tip $tip not merged through a PR)"
+    continue
+  fi
   worktree=$(git worktree list --porcelain \
     | awk -v ref="branch refs/heads/$branch" '/^worktree / { wt = substr($0, 10) } $0 == ref { print wt }')
   if [ -n "$worktree" ] && [ "$worktree" != "$(git rev-parse --show-toplevel)" ]; then
     echo "  Removing worktree: $worktree"
-    git worktree remove --force "$worktree"
+    git worktree remove "$worktree"
   fi
   echo "  Deleting branch: $branch"
   git branch -D "$branch"
 done
 ```
 
-If no branches are marked as `[gone]`, report that no cleanup was needed.
+If no branches are marked as `[gone]`, report that no cleanup was needed. A
+branch that is kept has local commits that never reached a merged PR, or a
+dirty worktree that `git worktree remove` refused; leave it for the user.
 
 ## Rules
 
