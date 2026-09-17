@@ -83,16 +83,17 @@ repos:
       - id: actionlint
 
   # Local hook so `pre-commit autoupdate` cannot bump it. Keep the version in
-  # sync with ZIZMOR_VERSION in ci-checks.yml so local and CI agree.
-  # zizmor >= 1.30 requires the `$/` self-repository syntax, which actionlint
-  # does not accept yet (rhysd/actionlint#711), so stay on 1.29 until it does.
+  # sync with ZIZMOR_VERSION in ci-checks.yml (the canonical pin shared across
+  # repos) so local and CI agree. zizmor >= 1.30 requires the `$/`
+  # self-repository syntax, which actionlint does not accept yet
+  # (rhysd/actionlint#711), so do not move past 1.29 until it does.
   - repo: local
     hooks:
       - id: zizmor
         name: zizmor
         entry: zizmor --config zizmor.yml .github/workflows/
         language: python
-        additional_dependencies: ["zizmor==1.29.0"]
+        additional_dependencies: ["zizmor==1.23.1"]
         files: ^\.github/workflows/.*\.ya?ml$
         pass_filenames: false
 
